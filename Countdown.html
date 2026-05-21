@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Countdown Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #16161f;
+    --border: #252535;
+    --accent: #7c6af7;
+    --accent-glow: rgba(124, 106, 247, 0.25);
+    --danger: #f04f4f;
+    --danger-glow: rgba(240, 79, 79, 0.25);
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --green: #42c97e;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,106,247,0.08) 0%, transparent 70%);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 40px 32px;
+    width: 360px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 24px 64px rgba(0,0,0,0.5);
+    transition: box-shadow 0.4s ease;
+  }
+
+  .card.flash {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 0 40px var(--danger-glow),
+      0 24px 64px rgba(0,0,0,0.5);
+    animation: pulseCard 0.5s infinite;
+  }
+
+  @keyframes pulseCard {
+    0%, 100% { border-color: var(--border); }
+    50% { border-color: rgba(240,79,79,0.5); }
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dot-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .dot.danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Big Display */
+  .display-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .ring-svg {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    transform: rotate(-90deg);
+    pointer-events: none;
+  }
+
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+  .ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
+  }
+
+  .time-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 72px;
+    font-weight: 500;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: var(--text);
+    position: relative;
+    z-index: 1;
+    transition: color 0.3s;
+  }
+
+  .time-number.danger { color: var(--danger); }
+
+  .time-unit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: -8px;
+  }
+
+  /* Set input row */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+
+  .input-row label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .input-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: right;
+    min-width: 0;
+  }
+
+  .input-row input::-webkit-inner-spin-button,
+  .input-row input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .set-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .set-btn:hover { opacity: 0.85; }
+  .set-btn:active { transform: scale(0.97); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-start {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(124,106,247,0.3);
+  }
+  .btn-start:hover { opacity: 0.9; box-shadow: 0 4px 24px rgba(124,106,247,0.45); }
+
+  .btn-reset {
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-reset:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+  /* Status message */
+  .status {
+    font-size: 12px;
+    color: var(--muted);
+    height: 16px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+  .status.ok { color: var(--green); }
+  .status.err { color: var(--danger); }
+
+  /* Preset chips */
+  .presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chip {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="timerCard">
+
+  <div class="header">
+    <div class="dot-row">
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
+      <div class="dot" id="d5"></div>
+    </div>
+    <span class="label">Countdown Timer</span>
+  </div>
+
+  <!-- Ring + number display -->
+  <div class="display-wrap">
+    <svg class="ring-svg" viewBox="0 0 180 180">
+      <circle class="ring-bg" cx="90" cy="90" r="82"/>
+      <circle class="ring-progress" id="ringProgress" cx="90" cy="90" r="82"/>
+    </svg>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <div class="time-number" id="display">30</div>
+      <div class="time-unit" id="unitLabel">seconds</div>
+    </div>
+  </div>
+
+  <!-- Input row -->
+  <div class="input-row">
+    <label for="timeInput">Set time</label>
+    <input id="timeInput" type="number" min="1" max="36000" value="30" placeholder="sec">
+    <button class="set-btn" onclick="applyTimerSetting()">Set</button>
+  </div>
+
+  <!-- Presets -->
+  <div class="presets">
+    <div class="chip" onclick="setPreset(30)">30s</div>
+    <div class="chip" onclick="setPreset(60)">1m</div>
+    <div class="chip" onclick="setPreset(300)">5m</div>
+    <div class="chip" onclick="setPreset(600)">10m</div>
+    <div class="chip" onclick="setPreset(1800)">30m</div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="controls">
+    <button class="btn btn-start" id="startBtn" onclick="startCountdown()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2l9 5-9 5V2z"/></svg>
+      Start
+    </button>
+    <button class="btn btn-reset" onclick="resetCountdown()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11.5 7A4.5 4.5 0 1 1 7 2.5h3M10 1v3H7"/></svg>
+      Reset
+    </button>
+  </div>
+
+  <div class="status" id="msg"></div>
+
+</div>
+
+<script>
+  /* ── State ── */
+  let totalSeconds = 30;
+  let remaining = 30;
+  let timerInterval = null;
+
+  const display   = document.getElementById("display");
+  const unitLabel = document.getElementById("unitLabel");
+  const card      = document.getElementById("timerCard");
+  const msg       = document.getElementById("msg");
+  const timeInput = document.getElementById("timeInput");
+  const startBtn  = document.getElementById("startBtn");
+  const ring      = document.getElementById("ringProgress");
+
+  const CIRCUMFERENCE = 2 * Math.PI * 82;
+  ring.style.strokeDasharray = CIRCUMFERENCE;
+
+  /* ── Sounds ── */
+  const beep20  = new Audio("sounds/Beep1.mp3");
+  const beep5   = new Audio("sounds/buzzer.mp3");
+  const zeroSfx = new Audio("sounds/GameOver.mp3");
+  [beep20, beep5, zeroSfx].forEach(a => { a.preload = "auto"; });
+  beep20.volume = 0.9; beep5.volume = 1.0; zeroSfx.volume = 1.0;
+
+  function safePlay(aud) {
+    try { aud.pause(); aud.currentTime = 0; const p = aud.play(); if (p?.catch) p.catch(()=>{}); } catch(e) {}
+  }
+  function stopAll() {
+    [beep20, beep5, zeroSfx].forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
+  }
+
+  /* ── Ring progress ── */
+  function updateRing() {
+    const pct = totalSeconds > 0 ? remaining / totalSeconds : 0;
+    const offset = CIRCUMFERENCE * (1 - pct);
+    ring.style.strokeDashoffset = offset;
+    const isDanger = remaining <= 5 && remaining > 0;
+    ring.style.stroke = isDanger ? "var(--danger)" : "var(--accent)";
+  }
+
+  /* ── Dots indicator ── */
+  function updateDots() {
+    const dots = document.querySelectorAll('.dot');
+    const pct = totalSeconds > 0 ? remaining / totalSeconds : 0;
+    const active = Math.ceil(pct * dots.length);
+    const isDanger = remaining <= 5 && remaining > 0;
+    dots.forEach((d, i) => {
+      d.classList.remove('active', 'danger');
+      if (i < active) d.classList.add(isDanger ? 'danger' : 'active');
+    });
+  }
+
+  /* ── Display ── */
+  function formatTime(s) {
+    if (s >= 60) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return sec > 0 ? `${m}:${String(sec).padStart(2,'0')}` : `${m}:00`;
+    }
+    return String(s);
+  }
+
+  function getUnit(s) {
+    if (s >= 3600) return 'hours';
+    if (s >= 60) return 'min : sec';
+    return s === 1 ? 'second' : 'seconds';
+  }
+
+  function refreshDisplay() {
+    display.textContent = formatTime(remaining);
+    unitLabel.textContent = getUnit(remaining);
+    display.classList.toggle('danger', remaining <= 5 && remaining > 0);
+    updateRing();
+    updateDots();
+  }
+
+  function setMessage(text, type='') {
+    msg.textContent = text || '';
+    msg.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  /* ── Preset ── */
+  function setPreset(s) {
+    if (timerInterval) { setMessage("Reset timer before changing time.", "err"); return; }
+    timeInput.value = s;
+    applyTimerSetting(true);
+  }
+
+  /* ── Apply setting ── */
+  function applyTimerSetting(silent=false) {
+    if (timerInterval) { setMessage("Stop or Reset before changing time.", "err"); return; }
+    const val = parseInt(timeInput.value, 10);
+    if (!Number.isFinite(val) || val < 1) { setMessage("Enter a valid number ≥ 1.", "err"); return; }
+    totalSeconds = val;
+    remaining = val;
+    refreshDisplay();
+    if (!silent) setMessage(`Set to ${val < 60 ? val + 's' : Math.floor(val/60) + 'm' + (val%60 ? ' '+val%60+'s':'')}`, "ok");
+  }
+
+  timeInput.addEventListener("keydown", e => { if (e.key === "Enter") applyTimerSetting(); });
+
+  /* ── Start ── */
+  function startCountdown() {
+    if (timerInterval) return;
+    if (remaining <= 0) remaining = totalSeconds;
+    setMessage("");
+    try { beep20.load(); beep5.load(); zeroSfx.load(); } catch(e){}
+
+    startBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8" rx="1"/><rect x="7" y="2" width="3" height="8" rx="1"/></svg> Running`;
+    startBtn.style.opacity = '0.65';
+    startBtn.style.cursor = 'default';
+
+    timerInterval = setInterval(() => {
+      remaining--;
+      refreshDisplay();
+
+      if (remaining <= 5 && remaining > 0) {
+        card.classList.add("flash");
+        safePlay(beep5);
+      } else if (remaining <= 20 && remaining > 5) {
+        card.classList.remove("flash");
+        safePlay(beep20);
+      } else {
+        card.classList.remove("flash");
+      }
+
+      if (remaining === 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        card.classList.remove("flash");
+        stopAll();
+        safePlay(zeroSfx);
+        setMessage("Time's up!", "err");
+        resetStartBtn();
+        updateDots();
+      }
+    }, 1000);
+  }
+
+  /* ── Reset ── */
+  function resetCountdown() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    stopAll();
+    card.classList.remove("flash");
+    remaining = totalSeconds;
+    refreshDisplay();
+    setMessage("");
+    resetStartBtn();
+  }
+
+  function resetStartBtn() {
+    startBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2l9 5-9 5V2z"/></svg> Start`;
+    startBtn.style.opacity = '';
+    startBtn.style.cursor = '';
+  }
+
+  /* ── Init ── */
+  timeInput.value = totalSeconds;
+  refreshDisplay();
+</script>
+</body>
+</html>

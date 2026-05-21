@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KOR Trivia Challenge 2025</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <style>
+    /* ── Base ─────────────────────────────────────────────────── */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    h1, h2, h3, .timer-display { font-family: 'Russo One', sans-serif; }
+
+    /* ── Game Card ────────────────────────────────────────────── */
+    .game-card {
+      background: rgba(30, 41, 59, 0.97);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(79, 70, 229, 0.6);
+      box-shadow: 0 0 40px rgba(79, 70, 229, 0.2), 0 24px 64px rgba(0,0,0,0.5);
+      color: white;
+    }
+
+    /* ── Buttons ──────────────────────────────────────────────── */
+    button { transition: all 0.15s ease-in-out; }
+    button:not(:disabled):active { transform: translateY(2px); }
+
+    #hintButton, #revealAnswerButton, #skipButton, #pauseButton,
+    #nextQuestionButton, #restartCurrentButton, #skipFromAnswerButton,
+    #reviewQuestionButton, #restartGameButton, #startGameButton,
+    #initAudioButton, #beginRealButton {
+      border-bottom-width: 4px;
+      border-color: rgba(0,0,0,0.25);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    #hintButton:active, #revealAnswerButton:active, #skipButton:active,
+    #pauseButton:active, #nextQuestionButton:active, #restartCurrentButton:active,
+    #skipFromAnswerButton:active, #reviewQuestionButton:active, #restartGameButton:active,
+    #startGameButton:active, #initAudioButton:active, #beginRealButton:active {
+      border-bottom-width: 0;
+      margin-top: 4px;
+    }
+
+    /* ── Timer ────────────────────────────────────────────────── */
+    .timer-display {
+      font-size: 3.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 12px rgba(255,255,255,0.4);
+      line-height: 1;
+    }
+    @media (min-width: 640px) { .timer-display { font-size: 4.5rem; } }
+
+    /* ── Answer Blast ─────────────────────────────────────────── */
+    .answer-blast { display: inline-block; animation: blast-in 1.2s cubic-bezier(0.68,-0.55,0.27,1.55) forwards; }
+    @keyframes blast-in {
+      0%   { transform: scale(0.5); opacity: 0; filter: blur(10px); }
+      50%  { transform: scale(1.1); opacity: 1; filter: blur(0); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .big-answer {
+      font-size: 2.25rem !important;
+      line-height: 1.25;
+      display: block;
+      margin: 16px 0;
+    }
+
+    /* ── Flash / Glow ─────────────────────────────────────────── */
+    .flashing-red { animation: flash-red 0.5s infinite alternate; }
+    @keyframes flash-red { from { color: #f87171; } to { color: #ef4444; } }
+
+    @keyframes pulseGlow {
+      0%   { box-shadow: 0 0 15px rgba(255,215,0,0.4); }
+      50%  { box-shadow: 0 0 35px rgba(255,0,0,0.7); }
+      100% { box-shadow: 0 0 15px rgba(255,215,0,0.4); }
+    }
+    .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+
+    /* ── Fall Zoom (last 5 sec) ───────────────────────────────── */
+    .fall-zoom { animation: fallZoom 0.4s ease-out; }
+    @keyframes fallZoom {
+      0%   { transform: scale(4); opacity: 0.3; }
+      60%  { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── MC Buttons ───────────────────────────────────────────── */
+    .mc-button, .option-button {
+      position: relative;
+      z-index: 20;
+      touch-action: manipulation;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-size: 1.1rem;
+    }
+
+    /* ── Question Text z-index ────────────────────────────────── */
+    #questionText { position: relative; z-index: 10; }
+
+    /* ── Hint Overlay ─────────────────────────────────────────── */
+    #hintScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none;
+      transition: opacity 250ms ease;
+    }
+    #hintScreen.active { opacity: 1; pointer-events: auto; }
+
+    #hintBox {
+      position: relative;
+      background: #fff;
+      color: #111827;
+      border-radius: 16px;
+      padding: 24px 28px;
+      max-width: 92%; width: 480px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      transform: scale(0.72); opacity: 0;
+      transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease;
+    }
+    #hintBox.active { transform: scale(1); opacity: 1; }
+
+    #hintCloseBtn {
+      position: absolute; right: 14px; top: 14px;
+      background: transparent; border: none;
+      font-size: 16px; cursor: pointer; line-height: 1;
+    }
+    #hintCloseBtn:hover { opacity: 0.7; }
+
+    @keyframes hintGlow {
+      0%   { box-shadow: 0 0 15px rgba(255,0,0,0.6); }
+      50%  { box-shadow: 0 0 35px rgba(255,215,0,0.9); }
+      100% { box-shadow: 0 0 15px rgba(255,0,0,0.6); }
+    }
+    .animate-hintGlow { animation: hintGlow 2.3s ease-in-out infinite; }
+
+    /* ── Answer Screen ────────────────────────────────────────── */
+    #answerScreen { padding-top: 52px !important; padding-bottom: 52px !important; }
+    #answerText { margin-bottom: 32px !important; }
+
+    /* ── Floating answer buttons spacing ─────────────────────── */
+    #floatingAnswerButtons {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Fullscreen / TV mode (hide tracker active) ───────────── */
+
+    /* Lock html + body to viewport */
+    html.fullscreen-mode,
+    .fullscreen-mode {
+      overflow: hidden !important;
+    }
+    html.fullscreen-mode body,
+    .fullscreen-mode body {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      align-items: stretch !important;
+      min-height: 100dvh !important;
+      height: 100dvh !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+
+    /* The flex row becomes a single full-width column */
+    .fullscreen-mode .layout-row {
+      flex-direction: column !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      height: 100dvh !important;
+      max-width: 100% !important;
+    }
+
+    /* Game wrapper fills full height */
+    .fullscreen-mode #gameWrapper {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      justify-content: flex-start !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+    }
+
+    /* Game card: no radius, fills full width, compact padding */
+    .fullscreen-mode #gameCard {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border-left: none !important;
+      border-right: none !important;
+      padding: 16px !important;
+      flex: 1 !important;
+    }
+
+    /* ── Desktop fullscreen (≥768px) ── */
+    @media (min-width: 768px) {
+      .fullscreen-mode #gameCard { padding: 36px !important; }
+      .fullscreen-mode #questionText {
+        font-size: 3rem !important; line-height: 1.2 !important;
+        text-align: center !important; max-width: 90% !important;
+        margin: 0 auto !important; word-wrap: break-word;
+      }
+      .fullscreen-mode #mcOptionsContainer {
+        display: grid !important; grid-template-columns: 1fr 1fr !important;
+        gap: 24px !important; padding: 12px 0 !important;
+      }
+      .fullscreen-mode .mc-button {
+        font-size: 1.75rem !important; padding: 18px !important;
+        min-height: 80px !important; padding-left: 22px !important;
+      }
+      .fullscreen-mode #timerContainer { width: 200px !important; height: 200px !important; border-width: 5px !important; }
+      .fullscreen-mode #timerDisplay   { font-size: 5.5rem !important; }
+      .fullscreen-mode #questionScreen { padding: 32px !important; }
+    }
+
+    /* ── Mobile fullscreen (< 768px) ── */
+    @media (max-width: 767px) {
+      .fullscreen-mode #gameCard { padding: 12px 12px 16px !important; }
+
+      /* Title: smaller on mobile fullscreen */
+      .fullscreen-mode h1 {
+        font-size: 1.2rem !important;
+        padding: 10px 12px !important;
+        margin-bottom: 10px !important;
+      }
+
+      /* Timer: compact circle */
+      .fullscreen-mode #timerContainer {
+        width: 100px !important; height: 100px !important;
+        border-width: 3px !important;
+      }
+      .fullscreen-mode #timerDisplay { font-size: 3rem !important; }
+      .fullscreen-mode #msDisplay    { font-size: 0.65rem !important; }
+
+      /* Question screen padding */
+      .fullscreen-mode #questionScreen {
+        padding: 14px !important;
+        border-width: 1px !important;
+      }
+
+      /* Question text: readable but not huge */
+      .fullscreen-mode #questionText {
+        font-size: 1.3rem !important;
+        line-height: 1.35 !important;
+        text-align: center !important;
+        margin: 0 auto 12px !important;
+        word-wrap: break-word;
+        padding-bottom: 8px !important;
+      }
+
+      /* MC options: single column on mobile */
+      .fullscreen-mode #mcOptionsContainer {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        padding: 6px 0 !important;
+        margin-bottom: 10px !important;
+      }
+
+      .fullscreen-mode .mc-button {
+        font-size: 0.95rem !important;
+        padding: 12px !important;
+        min-height: 48px !important;
+        padding-left: 14px !important;
+      }
+
+      /* Action buttons: 2×2 compact grid */
+      .fullscreen-mode #questionScreen .grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+      }
+      .fullscreen-mode #questionScreen .grid button {
+        font-size: 0.75rem !important;
+        padding: 8px 4px !important;
+      }
+
+      /* Answer screen */
+      .fullscreen-mode #answerScreen {
+        padding-top: 24px !important;
+        padding-bottom: 24px !important;
+      }
+      .fullscreen-mode .big-answer { font-size: 1.5rem !important; }
+      .fullscreen-mode #floatingAnswerButtons button {
+        font-size: 0.8rem !important;
+        padding: 8px 14px !important;
+      }
+
+      /* Timer container top spacing */
+      .fullscreen-mode .flex.justify-center.items-center.mb-5 {
+        margin-bottom: 8px !important;
+      }
+    }
+
+    /* ── Translate helper (toggle) ────────────────────────────── */
+    .translate-x-6 { transform: translateX(1.5rem); }
+
+    /* ── Dark Mode ────────────────────────────────────────────── */
+    body.dark { background-color: #1a202c; color: #e2e8f0; }
+    body.dark .game-card,
+    body.dark #scorePanel,
+    body.dark #settingsContent,
+    body.dark #pauseMenuContent {
+      background-color: #2d3748;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+    }
+    body.dark h1, body.dark h2, body.dark h3, body.dark p,
+    body.dark .text-gray-800, body.dark .text-gray-700, body.dark .text-indigo-600 { color: #e2e8f0; }
+    body.dark #timerContainer  { background-color: #4a5568; border-color: #718096; }
+    body.dark #questionScreen  { background-color: #718096; border-color: #9f7aea; }
+    body.dark #answerScreen    { background-color: #718096; }
+    body.dark .bg-gray-100     { background-color: #4a5568 !important; }
+    body.dark .bg-yellow-200   { background-color: #d69e2e !important; }
+    body.dark .bg-red-500      { background-color: #c53030 !important; }
+    body.dark .bg-green-500    { background-color: #38a169 !important; }
+    body.dark .bg-gray-700     { background-color: #4a5568 !important; }
+    body.dark .mc-button       { background-color: #4a5568; border-color: #4a5568; color: #e2e8f0; }
+    body.dark .mc-button:hover { background-color: #636b75; }
+    body.dark .mc-button.bg-green-500 { background-color: #10b981 !important; color: white !important; }
+    body.dark .mc-button.bg-red-500   { background-color: #ef4444 !important; color: white !important; }
+    body.dark .mc-button.bg-green-300 { background-color: #065f46 !important; border-color: #38a169 !important; color: #e2e8f0 !important; }
+    body.dark input[type="text"], body.dark input[type="number"] { background-color: #2d3748; border-color: #718096; color: #e2e8f0; }
+    body.dark .p-3.border.rounded-lg.bg-gray-50 { background-color: #2d3748; border-color: #4a5568; }
+    body.dark #settingsButton     { background-color: #2d3748; }
+    body.dark #settingsButton svg { color: #e2e8f0; }
+    body.dark .bg-purple-600      { background-color: #9f7aea !important; }
+    body.dark #hintText           { color: #f7ad1b; background-color: #3b300f; border: 1px solid #713f12; }
+  </style>
+</head>
+
+<body class="p-4 sm:p-6 flex flex-col items-center justify-center min-h-screen">
+
+  <!-- Settings Button -->
+  <button id="settingsButton"
+    class="fixed top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-indigo-400
+           transition p-3 rounded-full bg-slate-800 border border-slate-700 shadow-xl z-50">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+  </button>
+
+  <!-- Main Layout: Score Panel + Game Card -->
+  <div class="layout-row flex flex-col-reverse lg:flex-row w-full max-w-7xl gap-5 flex-1 mx-auto px-2 sm:px-4 lg:px-6">
+
+    <!-- ── Score Tracker Panel ───────────────────────────────── -->
+    <div id="scorePanel"
+      class="w-full lg:w-72 p-5 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl
+             h-fit lg:sticky lg:top-6 self-start text-white">
+      <h2 class="text-base font-bold text-indigo-400 mb-4 border-b border-slate-700 pb-2 tracking-wide uppercase">
+        Score Tracker
+      </h2>
+      <div id="playerListContainer" class="space-y-3 mb-4"></div>
+      <button id="addPlayerButton"
+        class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-xl
+               hover:bg-indigo-500 transition flex items-center justify-center gap-2 text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        Add Player
+      </button>
+      <div class="mt-5 border-t border-slate-700 pt-4">
+        <label for="scoreIncrementInput" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          Score Adjustment (+/−)
+        </label>
+        <input type="number" id="scoreIncrementInput" value="1" min="1" max="1000"
+          class="w-full p-2 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm
+                 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+      </div>
+    </div>
+
+    <!-- ── Game Wrapper ──────────────────────────────────────── -->
+    <div id="gameWrapper" class="flex-1 min-w-0">
+      <div id="gameCard" class="game-card rounded-2xl p-5 sm:p-8 transition-all duration-300 w-full">
+
+        <!-- Title -->
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center mb-6 text-white
+                   px-6 py-5 rounded-2xl shadow-xl
+                   bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600
+                   animate-pulse-glow">
+          KOR Thanksgiving "2025"
+        </h1>
+
+        <!-- ── Welcome Screen ──────────────────────────────── -->
+        <div id="welcomeScreen"
+          class="flex flex-col items-center justify-center py-10 px-4 text-center transition-opacity duration-500">
+          <img src="https://drive.google.com/thumbnail?id=1iLMCP2wh8e4BdxM_rds3W1GxkX0LVUqi"
+            alt="Logo" class="w-36 h-36 mb-5 object-contain rounded-2xl shadow-lg">
+          <h2 class="text-xl font-bold text-white mb-2">Welcome to KOR Challenge!</h2>
+          <p class="text-slate-400 mb-8 text-sm max-w-sm">
+            Bible verse trivia questions. Click Initialize to unlock sound, then Start when ready.
+          </p>
+          <button id="initAudioButton"
+            class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-3 px-10 rounded-xl
+                   text-lg hover:bg-indigo-500 transition shadow-lg mb-3">
+            Initialize Sound
+          </button>
+          <button id="startGameButton"
+            class="hidden w-full sm:w-auto bg-emerald-600 text-white font-bold py-3 px-10
+                   rounded-xl text-lg hover:bg-emerald-500 transition shadow-lg">
+            Click to Start Game
+          </button>
+          <button id="beginRealButton"
+            class="hidden bg-emerald-600 text-white font-bold py-3 px-10 rounded-xl
+                   text-lg hover:bg-emerald-500 transition shadow-lg">
+            Begin Challenge
+          </button>
+        </div>
+
+        <!-- ── Active Game Content ────────────────────────── -->
+        <div id="gameContent" class="hidden">
+
+          <!-- Timer -->
+          <div class="flex justify-center items-center mb-5">
+            <div id="timerContainer"
+              class="p-4 rounded-full w-32 h-32 flex items-center justify-center
+                     bg-slate-900 transition-colors duration-300
+                     shadow-[0_0_30px_rgba(0,0,0,0.5)] border-4 border-slate-700 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-br from-transparent to-black opacity-30"></div>
+              <span id="timerDisplay" class="timer-display text-white leading-none z-10">30</span>
+              <span id="msDisplay" style="font-size:0.85rem; margin-left:4px; opacity:0.7; font-family:monospace;">000</span>
+            </div>
+          </div>
+
+          <!-- Question Screen -->
+          <div id="questionScreen"
+            class="hidden border-2 border-indigo-500 rounded-2xl p-5 sm:p-7 bg-indigo-950 bg-opacity-60 transition-all duration-300">
+            <p id="questionNumber" class="text-xs font-semibold text-indigo-400 mb-2 text-center tracking-widest uppercase">
+              Question #1
+            </p>
+            <h2 id="questionText"
+              class="text-2xl sm:text-3xl font-bold text-white pb-5 text-center leading-snug">
+              Loading question...
+            </h2>
+
+            <!-- Hint text (inline, hidden by default) -->
+            <div id="hintContainer" class="text-center mb-4">
+              <p id="hintText"
+                class="text-base text-white bg-gradient-to-r from-red-600 to-yellow-500
+                       px-4 py-2 rounded-xl inline-block transition-opacity duration-500 opacity-0 shadow-md">
+              </p>
+            </div>
+
+            <!-- MC Options -->
+            <div id="mcOptionsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5"></div>
+
+            <!-- Action Buttons Row -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button id="hintButton"
+                class="bg-yellow-500 text-white font-semibold py-3 px-3 rounded-xl
+                       hover:bg-yellow-400 transition disabled:opacity-40 text-sm">
+                Show Hint (H)
+              </button>
+              <button id="revealAnswerButton"
+                class="bg-rose-600 text-white font-semibold py-3 px-3 rounded-xl
+                       hover:bg-rose-500 transition disabled:opacity-40 text-sm">
+                Reveal Answer (R)
+              </button>
+              <button id="skipButton"
+                class="bg-purple-600 text-white font-semibold py-3 px-3 rounded-xl
+                       hover:bg-purple-500 transition disabled:opacity-40 text-sm">
+                Skip (S)
+              </button>
+              <button id="pauseButton"
+                class="bg-slate-600 text-white font-semibold py-3 px-3 rounded-xl
+                       hover:bg-slate-500 transition text-sm">
+                Pause ⏸
+              </button>
+            </div>
+          </div>
+
+          <!-- Answer Screen -->
+          <div id="answerScreen"
+            class="hidden rounded-2xl p-6 sm:p-8 bg-emerald-600 text-white text-center transition-all duration-300">
+            <p id="answerStatusText" class="text-base font-semibold mb-2 opacity-90">The Correct Answer Is:</p>
+            <h3 id="answerText" class="text-2xl font-extrabold answer-blast"></h3>
+            <div id="floatingAnswerButtons">
+              <button id="nextQuestionButton"
+                class="bg-white text-emerald-700 font-bold py-3 px-8 rounded-xl
+                       hover:bg-gray-100 transition shadow-md text-sm">
+                Next Question
+              </button>
+              <button id="restartCurrentButton"
+                class="hidden bg-indigo-600 text-white font-bold py-3 px-8 rounded-xl
+                       hover:bg-indigo-500 transition shadow-md text-sm">
+                Restart Question (R)
+              </button>
+              <button id="skipFromAnswerButton"
+                class="hidden bg-purple-600 text-white font-bold py-3 px-8 rounded-xl
+                       hover:bg-purple-500 transition shadow-md text-sm">
+                Skip Question (S)
+              </button>
+              <button id="reviewQuestionButton"
+                class="hidden bg-yellow-500 text-white font-bold py-3 px-8 rounded-xl
+                       hover:bg-yellow-400 transition shadow-md text-sm">
+                Review Question
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /gameContent -->
+
+        <!-- Final Screen -->
+        <div id="finalScreen" class="hidden text-center py-14 px-6">
+          <div class="text-5xl mb-4">🎉</div>
+          <h2 class="text-3xl font-bold text-emerald-400 mb-3">Challenge Complete!</h2>
+          <p class="text-slate-400 mb-8">You've gone through all available questions.</p>
+          <button id="restartGameButton"
+            class="bg-indigo-600 text-white font-bold py-3 px-10 rounded-xl text-lg
+                   hover:bg-indigo-500 transition shadow-lg">
+            Restart Challenge
+          </button>
+        </div>
+
+      </div><!-- /gameCard -->
+    </div><!-- /gameWrapper -->
+  </div><!-- /flex layout -->
+
+  <!-- ── Hint Full-Screen Overlay ─────────────────────────────── -->
+  <div id="hintScreen" class="hidden">
+    <div id="hintBox" role="dialog" aria-modal="true" aria-labelledby="hintTitle"
+      class="relative w-96 p-6 rounded-2xl shadow-2xl
+             bg-gradient-to-br from-red-600 via-red-500 to-yellow-500
+             text-white animate-hintGlow">
+      <button id="hintCloseBtn" aria-label="Close hint"
+        class="absolute top-4 right-4 p-2 rounded-full bg-white bg-opacity-20
+               hover:bg-opacity-40 transition text-white font-bold">
+        ✕
+      </button>
+      <h3 id="hintTitle" class="text-xl font-extrabold mb-3 drop-shadow-md">💡 Hint</h3>
+      <div id="hintTextOverlay" class="text-base leading-relaxed drop-shadow-md"></div>
+    </div>
+  </div>
+
+  <!-- ── Settings Modal ────────────────────────────────────────── -->
+  <div id="settingsModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div id="settingsContent"
+      class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl text-white">
+      <h3 class="text-xl font-bold mb-5 border-b border-slate-700 pb-3 flex justify-between items-center">
+        Game Settings
+        <button id="closeSettings" class="text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Fireworks -->
+        <div class="flex items-center justify-between p-3 bg-slate-700 rounded-xl border border-slate-600">
+          <span class="text-sm font-medium">Enable Welcome Fireworks</span>
+          <label for="fireworksToggle" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="fireworksToggle" class="sr-only">
+              <div class="block bg-slate-500 w-12 h-7 rounded-full"></div>
+              <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Time per question -->
+        <div>
+          <label for="timeInput" class="block text-sm font-medium text-slate-300 mb-1">Time per Question (seconds)</label>
+          <input type="number" id="timeInput" value="30" min="5" max="120"
+            class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white text-base
+                   focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <!-- Score points -->
+        <div>
+          <label for="scorePointsInput" class="block text-sm font-medium text-slate-300 mb-1">Points for Correct Answer</label>
+          <input type="number" id="scorePointsInput" value="100" min="1" max="1000"
+            class="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl text-white text-base
+                   focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <!-- Multiple Choice -->
+        <div class="flex items-center justify-between p-3 bg-slate-700 rounded-xl border border-slate-600">
+          <span class="text-sm font-medium">Multiple Choice Options</span>
+          <label for="multiChoiceToggle" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="multiChoiceToggle" class="sr-only">
+              <div class="block bg-slate-500 w-12 h-7 rounded-full"></div>
+              <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Hide Score Tracker -->
+        <div class="flex items-center justify-between p-3 bg-slate-700 rounded-xl border border-slate-600">
+          <span class="text-sm font-medium">Hide Manual Score Tracker</span>
+          <label for="hideScoreTrackerToggle" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="hideScoreTrackerToggle" class="sr-only">
+              <div class="block bg-slate-500 w-12 h-7 rounded-full"></div>
+              <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Dark Mode -->
+        <div class="flex items-center justify-between p-3 bg-slate-700 rounded-xl border border-slate-600">
+          <span class="text-sm font-medium">Dark Mode</span>
+          <label for="darkModeToggle" class="flex items-center cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="darkModeToggle" class="sr-only">
+              <div class="block bg-slate-500 w-12 h-7 rounded-full"></div>
+              <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <button id="saveSettings"
+        class="mt-5 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl
+               hover:bg-indigo-500 transition text-base">
+        Save and Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Pause Modal ────────────────────────────────────────────── -->
+  <div id="pauseMenuModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div id="pauseMenuContent"
+      class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center text-white">
+      <div class="text-4xl mb-3">⏸</div>
+      <h3 class="text-2xl font-bold mb-5">Game Paused</h3>
+      <div class="space-y-3">
+        <button id="resumeButton"
+          class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-emerald-500 transition">
+          Resume Game
+        </button>
+        <button id="restartFromPauseButton"
+          class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-500 transition">
+          Restart Challenge
+        </button>
+        <button id="settingsFromPauseButton"
+          class="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-slate-500 transition">
+          Open Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── External Game Logic ────────────────────────────────────── -->
+  <script src="trivia.js"></script>
+
+</body>
+</html>

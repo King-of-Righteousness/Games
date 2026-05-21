@@ -1,0 +1,2119 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" /> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
+    <title>KOR Trivia Challenge 2025</title> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script> 
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script> 
+ 
+    <style> 
+	 
+		#floatingAnswerButtons { 
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+} 
+ 
+		 
+        /* Custom styles for the game card and overall layout */ 
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        h1, h2, h3, .timer-display {
+            font-family: 'Russo One', sans-serif;
+        }
+        .game-card { 
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #4f46e5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+            color: white;
+        }
+        button {
+            transition: all 0.1s ease-in-out;
+        }
+        button:not(:disabled):active {
+            transform: translateY(2px);
+        }
+        /* Enhance action buttons */
+        #hintButton, #revealAnswerButton, #skipButton, #pauseButton, #nextQuestionButton, #restartCurrentButton, #skipFromAnswerButton, #reviewQuestionButton, #restartGameButton, #startGameButton, #initAudioButton, #beginRealButton {
+             border-bottom-width: 4px;
+             border-color: rgba(0,0,0,0.3);
+             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        #hintButton:active, #revealAnswerButton:active, #skipButton:active, #pauseButton:active, #nextQuestionButton:active, #restartCurrentButton:active, #skipFromAnswerButton:active, #reviewQuestionButton:active, #restartGameButton:active, #startGameButton:active, #initAudioButton:active, #beginRealButton:active {
+            border-bottom-width: 0px;
+            margin-top: 4px;
+        }
+        .timer-display { 
+            font-size: 3.5rem; 
+            font-weight: 700; 
+            letter-spacing: 0.1em; 
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); 
+            line-height: 1; 
+        } 
+        @media (min-width: 640px) {
+            .timer-display { font-size: 5rem; }
+        }
+        .answer-blast { 
+            display: inline-block; 
+            animation: blast-in 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; 
+        } 
+		 
+		/* Larger answer text when revealed */ 
+.big-answer { 
+    font-size: 2.5rem !important; /* was 5rem */ 
+    line-height: 1.2; 
+    display: block; 
+    margin-top: 16px; 
+    margin-bottom: 16px; 
+} 
+ 
+		 
+		 
+		 
+		 
+        @keyframes blast-in { 
+            0% { 
+                transform: scale(0.5); 
+                opacity: 0; 
+                filter: blur(10px); 
+            } 
+            50% { 
+                transform: scale(1.1); 
+                opacity: 1; 
+                filter: blur(0); 
+            } 
+            100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            } 
+        } 
+        .flashing-red { 
+            animation: flash-red 0.5s infinite alternate; 
+        } 
+        @keyframes flash-red { 
+            from { color: #f87171; } 
+            to { color: #ef4444; } 
+        } 
+ 
+        /* --- DARK MODE STYLES --- */ 
+        body.dark { 
+            background-color: #1a202c; 
+            color: #e2e8f0; 
+        } 
+        body.dark .game-card, body.dark #scorePanel, body.dark #settingsContent, body.dark #pauseMenuContent { 
+            background-color: #2d3748; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.2); 
+        } 
+        body.dark h1, body.dark h2, body.dark h3, body.dark p, body.dark .text-gray-800, body.dark .text-gray-700, body.dark .text-indigo-600 { 
+            color: #e2e8f0; 
+        } 
+        /* Base timer container style */ 
+        body.dark #timerContainer { 
+            background-color: #4a5568; 
+            border-color: #718096; 
+        } 
+ 
+        /* Lighter Question/Answer Box Background */ 
+        body.dark #questionScreen { 
+            background-color: #718096; 
+            border-color: #9f7aea; 
+        } 
+        body.dark #answerScreen { 
+            background-color: #718096; 
+        } 
+ 
+        /* Timer and Dynamic Background Overrides */ 
+        body.dark .bg-gray-100 { background-color: #4a5568 !important; } 
+        body.dark .bg-yellow-200 { background-color: #d69e2e !important; } 
+        body.dark .bg-red-500 { background-color: #c53030 !important; } 
+        body.dark .bg-green-500 { background-color: #38a169 !important; } 
+        body.dark .bg-gray-700 { background-color: #4a5568 !important; } /* Time Up Screen */ 
+ 
+        /* Multiple Choice (MC) Button Overrides */ 
+        body.dark .mc-button { 
+            background-color: #4a5568; 
+            border-color: #4a5568; 
+            color: #e2e8f0; 
+        } 
+        body.dark .mc-button:hover { 
+            background-color: #636b75; 
+        } 
+        /* Override specific classes applied in JS */ 
+        body.dark .mc-button.bg-green-500 { background-color: #10b981 !important; color: white !important; } 
+        body.dark .mc-button.bg-red-500 { background-color: #ef4444 !important; color: white !important; } 
+        body.dark .mc-button.bg-green-300 { 
+            background-color: #065f46 !important; 
+            border-color: #38a169 !important; 
+            color: #e2e8f0 !important; 
+        } 
+ 
+        /* Dark mode for score panel inputs/elements */ 
+        body.dark input[type="text"], body.dark input[type="number"] { 
+            background-color: #2d3748; 
+            border-color: #718096; 
+            color: #e2e8f0; 
+        } 
+        body.dark .p-3.border.rounded-lg.bg-gray-50 { 
+            background-color: #2d3748; 
+            border-color: #4a5568; 
+        } 
+        body.dark #settingsButton { 
+            background-color: #2d3748; 
+        } 
+        body.dark #settingsButton svg { 
+             color: #e2e8f0; 
+        } 
+ 
+        /* Purple for Skip Button Dark Mode */ 
+        body.dark .bg-purple-600 { background-color: #9f7aea !important; } 
+        body.dark .hover:bg-purple-700:hover { background-color: #805ad5 !important; } 
+ 
+        /* FIX for HINT TEXT */ 
+        body.dark #hintText { 
+            color: #f7ad1b; 
+            background-color: #3b300f; 
+            border: 1px solid #713f12; 
+        } 
+ 
+        /* Toggle movement helper (Tailwind translate utility equivalent) */ 
+        .translate-x-6 { 
+            transform: translateX(1.5rem); /* 6 * 0.25rem */ 
+        } 
+		 
+		/* Make MC buttons sit above the question block so they receive clicks reliably */ 
+.option-button, .mc-button { 
+    position: relative; 
+    z-index: 20; 
+    touch-action: manipulation; /* improves touch responsiveness on mobile */ 
+} 
+ 
+/* Ensure the question text stays below the answer buttons */ 
+#questionText { 
+    position: relative; 
+    z-index: 10; 
+} 
+ 
+ 
+/* ===== HINT OVERLAY (fullscreen modal + zoom animation) ===== */ 
+#hintScreen { 
+    position: fixed; 
+    inset: 0; 
+    z-index: 9999; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: rgba(0,0,0,0.55); 
+    opacity: 0; 
+    pointer-events: none; 
+    transition: opacity 250ms ease; 
+} 
+ 
+/* the centered box */ 
+#hintBox { 
+    position: relative; 
+    background: #fff; 
+    color: #111827; 
+    border-radius: 12px; 
+    padding: 20px 24px; 
+    max-width: 92%; 
+    width: 480px; 
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35); 
+    transform: scale(0.72); 
+    opacity: 0; 
+    transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease; 
+} 
+ 
+/* visible/active classes */ 
+#hintScreen.active { 
+    opacity: 1; 
+    pointer-events: auto; 
+} 
+#hintBox.active { 
+    transform: scale(1); 
+    opacity: 1; 
+} 
+ 
+/* small close button */ 
+#hintCloseBtn { 
+    position: absolute; 
+    right: 12px; 
+    top: 12px; 
+    background: transparent; 
+    border: none; 
+    font-size: 14px; 
+    cursor: pointer; 
+} 
+#hintCloseBtn:hover { filter: brightness(0.9); } 
+ 
+/* accessibility: trap focus visually if needed (basic) */ 
+#hintBox:focus { outline: none; } 
+ 
+ 
+ 
+		 
+		/* Falling zoom animation */ 
+.fall-zoom { 
+    animation: fallZoom 0.4s ease-out; 
+} 
+ 
+@keyframes fallZoom { 
+    0%   { transform: scale(4); opacity: 0.3; } 
+    60%  { transform: scale(1.2); opacity: 1; } 
+    100% { transform: scale(1); opacity: 1; } 
+} 
+ 
+/* =========================================== 
+   FULL SCREEN TV MODE (when score hidden) 
+=========================================== */ 
+ 
+.fullscreen-mode #gameCard { 
+    width: 100% !important; 
+    max-width: 100% !important; 
+    margin: 0 !important; 
+    border-radius: 0 !important; 
+    padding: 40px !important; 
+} 
+ 
+.fullscreen-mode #questionText { 
+    font-size: 3.5rem !important; 
+    line-height: 1.2 !important; 
+    text-align: center !important; 
+    max-width: 90% !important; 
+    margin: 0 auto !important; 
+    word-wrap: break-word; 
+} 
+ 
+/* Multiple Choice Buttons */ 
+.fullscreen-mode .mc-button { 
+    font-size: 2rem !important; 
+    padding: 22px !important; 
+    width: 100% !important; 
+    min-height: 90px !important; 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: flex-start !important; 
+    padding-left: 25px !important; 
+} 
+/* Multiple Choice Container */ 
+.fullscreen-mode #mcOptionsContainer { 
+    display: grid !important; 
+    grid-template-columns: 1fr 1fr !important; 
+    gap: 32px !important; 
+    padding: 20px 0 !important; 
+} 
+ 
+.mc-button { 
+    min-height: 60px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-start; 
+    font-size: 1.25rem; 
+} 
+ 
+.fullscreen-mode #timerContainer { 
+    width: 260px !important; 
+    height: 260px !important; 
+    border-width: 6px !important; 
+} 
+ 
+.fullscreen-mode #timerDisplay { 
+    font-size: 7rem !important; 
+} 
+ 
+ 
+@keyframes pulseGlow { 
+  0%   { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); } 
+  50%  { box-shadow: 0 0 30px rgba(255, 0, 0, 0.7); } 
+  100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); } 
+} 
+ 
+.animate-pulse-glow { 
+  animation: pulseGlow 2s ease-in-out infinite; 
+} 
+ 
+ 
+/* Fix overlap: increase button height & spacing */ 
+.fullscreen-mode #mcOptionsContainer { 
+    grid-template-columns: 1fr 1fr !important; 
+    gap: 32px !important; 
+    padding: 20px 0 !important; 
+} 
+ 
+.fullscreen-mode .mc-button { 
+    min-height: 90px !important; 
+    font-size: 2rem !important; 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: flex-start !important; 
+    padding-left: 25px !important; 
+} 
+ 
+/* Center Game */ 
+.fullscreen-mode #gameWrapper { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    min-height: 100vh !important; 
+    flex-direction: column !important; 
+} 
+.fullscreen-mode body { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    justify-content: center !important; 
+    min-height: 100vh !important; 
+} 
+/* Question Container */ 
+.fullscreen-mode #questionScreen { 
+    padding: 40px !important; 
+} 
+ 
+ 
+ 
+    </style> 
+</head> 
+<body class="p-4 sm:p-8 flex flex-col items-center justify-center min-h-screen"> 
+ 
+    <button id="settingsButton" class="fixed top-4 right-4 sm:top-8 sm:right-8 text-gray-500 hover:text-indigo-600 transition duration-150 p-3 rounded-full bg-white shadow-xl z-50"> 
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826 3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> 
+    </button> 
+ 
+     
+	<div class="flex flex-col-reverse lg:flex-row w-full max-w-7xl gap-6 flex-1 mx-auto px-4 sm:px-6 lg:px-8"> 
+ 
+	 
+	 
+ 
+ 
+        <div id="scorePanel" class="w-full lg:w-80 p-6 bg-slate-800 border-2 border-slate-600 rounded-xl shadow-xl h-fit lg:sticky lg:top-8 self-start overflow-hidden text-white"> 
+            <h2 class="text-xl font-bold text-indigo-400 mb-4 border-b border-slate-600 pb-2">Score Tracker</h2> 
+            <div id="playerListContainer" class="space-y-4 mb-4"></div> 
+            <button id="addPlayerButton" class="w-full bg-indigo-500 text-white font-semibold py-2 rounded-lg hover:bg-indigo-600 transition duration-150 flex items-center justify-center"> 
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg> 
+                Add Player 
+            </button> 
+            <div class="mt-6 border-t pt-4"> 
+                <label for="scoreIncrementInput" class="block text-sm font-medium text-gray-700 mb-2">Score Adjustment (+/-)</label> 
+                <input type="number" id="scoreIncrementInput" value="1" min="1" max="1000" class="w-full p-2 border border-gray-300 rounded-lg text-lg focus:ring-indigo-500 focus:border-indigo-500"> 
+            </div> 
+        </div> 
+ 
+                    <div id="gameWrapper" class="w-full"> 
+					<div id="gameCard" class="game-card rounded-xl p-4 sm:p-6 md:p-10 transition-all duration-300 w-full"> 
+ 
+			 
+					 
+ 
+<h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-6 text-white 
+           px-4 sm:px-10 py-6 rounded-2xl shadow-xl 
+           bg-gradient-to-r from-yellow-400 via-yellow-500 to-red-600 
+           animate-pulse-glow"> 
+    KOR Thanksgiving "2025" 
+</h1> 
+ 
+ 
+ 
+ 
+ 
+			 
+            <div id="welcomeScreen" class="flex flex-col items-center justify-center p-6 sm:p-10 text-center transition-opacity duration-500"> 
+			 
+ 
+<img src="https://drive.google.com/thumbnail?id=1iLMCP2wh8e4BdxM_rds3W1GxkX0LVUqi" 
+     alt="Logo" 
+     class="w-48 h-48 mb-4 object-contain">
+ 
+ 
+ 
+			 
+			 
+			 
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome to KOR Challenge!</h2> 
+                <p class="text-gray-600 mb-8">Bible verse trivia questions. 
+ click Initialize/Start when you are ready.</p> 
+ 
+                <!-- Step 1: Initialize audio only (silent unlock) --> 
+                <button id="initAudioButton" 
+                        class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-4 px-12 rounded-lg text-xl hover:bg-indigo-700 transition duration-150 shadow-lg mb-4"> 
+                    Initialize Sound 
+                </button> 
+ 
+                <!-- Step 2: Actual msInterval game start (hidden until audio is initialized) --> 
+                <button id="startGameButton" 
+                        class="hidden w-full sm:w-auto bg-green-600 text-white font-bold py-4 px-12 rounded-lg text-xl hover:bg-green-700 transition duration-150 shadow-lg"> 
+                    Click to Start Game 
+                </button> 
+ 
+                <button id="beginRealButton" 
+                        class="hidden bg-green-600 text-white font-bold py-4 px-12 rounded-lg text-xl hover:bg-green-700 transition duration-150 shadow-lg"> 
+                    Begin Challenge 
+                </button> 
+            </div> 
+ 
+            <div id="gameContent" class="hidden"> 
+                <div class="mb-8"> 
+                    <div class="flex justify-center items-center mb-6"> 
+                        <div id="timerContainer" class="p-4 rounded-full w-40 h-40 flex items-center justify-center bg-slate-900 transition-colors duration-300 shadow-[0_0_30px_rgba(0,0,0,0.5)] border-4 border-slate-700 relative overflow-hidden"> 
+                            <div class="absolute inset-0 bg-gradient-to-br from-transparent to-black opacity-30"></div>
+                            <span id="timerDisplay" class="timer-display text-white leading-none z-10">30</span> 
+							<span id="msDisplay" style="font-size:1rem; margin-left:6px; opacity:0.8;">000</span> 
+                        </div> 
+                    </div> 
+ 
+                    <div id="questionScreen" class="hidden border-4 border-indigo-600 rounded-xl p-6 bg-indigo-50 transition-all duration-300"> 
+                        <p id="questionNumber" class="text-sm font-medium text-indigo-600 mb-2 text-center">Question #1</p> 
+                        <h2 id="questionText" class="text-3xl font-bold text-gray-800 pb-6 text-center">Loading question...</h2> 
+						 
+						 
+<div id="hintContainer" class="text-center mb-4"> 
+    <p id="hintText" 
+       class="text-lg text-white bg-gradient-to-r from-red-600 to-yellow-600 p-3 rounded-xl inline-block transition-opacity duration-500 opacity-0 shadow-lg"> 
+    </p> 
+</div> 
+ 
+ 
+ 
+ 
+						 
+						 
+						 
+                        <div id="mcOptionsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div> 
+ 
+                        <div class="flex flex-col sm:flex-row gap-4"> 
+                            <button id="hintButton" class="flex-1 bg-yellow-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-yellow-600 transition duration-150 disabled:opacity-50">Show Hint (H)</button> 
+                            <button id="revealAnswerButton" class="flex-1 bg-red-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-red-700 transition duration-150 disabled:opacity-50">Reveal Answer (R)</button> 
+                            <button id="skipButton" class="flex-1 bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-purple-700 transition duration-150 disabled:opacity-50">Skip (S)</button> 
+                            <button id="pauseButton" class="flex-1 bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-150">Pause ⏸</button> 
+                        </div> 
+                    </div> 
+					 
+ 
+ 
+<!-- FULL-SCREEN HINT OVERLAY --> 
+<div id="hintScreen" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden"> 
+ 
+  <div id="hintBox" role="dialog" aria-modal="true" aria-labelledby="hintTitle" 
+       class="relative w-96 p-6 rounded-2xl shadow-2xl  
+              bg-gradient-to-r from-red-600 via-red-500 to-yellow-500 
+              text-white animate-hintGlow"> 
+ 
+    <button id="hintCloseBtn" aria-label="Close hint" 
+            class="absolute top-4 right-4 p-2 rounded-full bg-white bg-opacity-20  
+                   hover:bg-opacity-40 transition"> 
+      ✕ 
+    </button> 
+ 
+    <h3 id="hintTitle" class="text-2xl font-extrabold mb-3 drop-shadow-md"> 
+      Hint 
+    </h3> 
+ 
+    <div id="hintTextOverlay" class="text-lg leading-relaxed drop-shadow-md"></div> 
+ 
+  </div> 
+</div> 
+ 
+<style> 
+@keyframes hintGlow { 
+  0%   { box-shadow: 0 0 15px rgba(255,0,0,0.6); } 
+  50%  { box-shadow: 0 0 35px rgba(255,215,0,0.9); } 
+  100% { box-shadow: 0 0 15px rgba(255,0,0,0.6); } 
+} 
+.animate-hintGlow { 
+  animation: hintGlow 2.3s ease-in-out infinite; 
+} 
+ 
+#answerScreen { 
+    padding-top: 60px !important; 
+    padding-bottom: 60px !important; 
+} 
+} 
+#answerText { 
+    margin-bottom: 40px !important; 
+} 
+ 
+ 
+ 
+ 
+</style> 
+ 
+ 
+ 
+ 
+ 
+                    <div id="answerScreen" class="hidden rounded-xl p-6 bg-green-500 text-white text-center transition-all duration-300"> 
+                        <p id="answerStatusText" class="text-lg font-semibold mb-2">The Correct Answer Is:</p> 
+                        <h3 id="answerText" class="text-2xl font-extrabold answer-blast"></h3> 
+ 
+                        <div id="floatingAnswerButtons" class="flex justify-center space-x-4"> 
+                            <button id="nextQuestionButton" class="bg-white text-green-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition duration-150 shadow-md">Next Question</button> 
+                            <button id="restartCurrentButton" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md hidden">Restart Question (R)</button> 
+                            <button id="skipFromAnswerButton" class="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition duration-150 shadow-md hidden">Skip Question (S)</button> 
+							<button id="reviewQuestionButton" class="bg-yellow-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-yellow-600 transition duration-150 shadow-md hidden">Review Question</button> 
+                        </div> 
+                    </div> 
+                </div> 
+            </div> 
+ 
+            <div id="finalScreen" class="hidden text-center p-10"> 
+                <h2 class="text-4xl font-bold text-green-600 mb-4">Challenge Complete! 🎉</h2> 
+                <p class="text-gray-700 text-xl mb-6">You have gone through all available questions.</p> 
+                <button id="restartGameButton" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-indigo-700 transition duration-150">Restart Challenge</button> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100] flex items-center justify-center"> 
+        <div id="settingsContent" class="bg-white rounded-xl w-full max-w-lg p-6 md:p-8 shadow-2xl"> 
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 flex justify-between items-center"> 
+                Game Settings 
+                <button id="closeSettings" class="text-gray-500 hover:text-gray-800"> 
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> 
+                </button> 
+            </h3> 
+			 
+			<div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50"> 
+    <span class="text-lg font-medium text-gray-700">Enable Welcome Fireworks</span> 
+    <label for="fireworksToggle" class="flex items-center cursor-pointer"> 
+        <div class="relative"> 
+            <input type="checkbox" id="fireworksToggle" class="sr-only"> 
+            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div> 
+            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div> 
+        </div> 
+    </label> 
+</div> 
+			 
+			 
+ 
+            <div class="space-y-6"> 
+                <div> 
+                    <label for="timeInput" class="block text-lg font-medium text-gray-700 mb-2">Time per Question (seconds)</label> 
+                    <input type="number" id="timeInput" value="30" min="5" max="120" class="w-full p-3 border border-gray-300 rounded-lg text-lg focus:ring-indigo-500 focus:border-indigo-500"> 
+                </div> 
+ 
+                <div> 
+                    <label for="scorePointsInput" class="block text-lg font-medium text-gray-700 mb-2">Points for Correct Answer</label> 
+                    <input type="number" id="scorePointsInput" value="100" min="1" max="1000" class="w-full p-3 border border-gray-300 rounded-lg text-lg focus:ring-indigo-500 focus:border-indigo-500"> 
+                </div> 
+ 
+                <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50"> 
+                    <span class="text-lg font-medium text-gray-700">Enable Multiple Choice Options</span> 
+                    <label for="multiChoiceToggle" class="flex items-center cursor-pointer"> 
+                        <div class="relative"> 
+                            <input type="checkbox" id="multiChoiceToggle" class="sr-only"> 
+                            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div> 
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div> 
+                        </div> 
+                    </label> 
+                </div> 
+ 
+                <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50"> 
+                    <span class="text-lg font-medium text-gray-700">Hide Manual Score Tracker</span> 
+                    <label for="hideScoreTrackerToggle" class="flex items-center cursor-pointer"> 
+                        <div class="relative"> 
+                            <input type="checkbox" id="hideScoreTrackerToggle" class="sr-only"> 
+                            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div> 
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div> 
+                        </div> 
+                    </label> 
+                </div> 
+ 
+                <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50"> 
+                    <span class="text-lg font-medium text-gray-700">Dark Mode</span> 
+                    <label for="darkModeToggle" class="flex items-center cursor-pointer"> 
+                        <div class="relative"> 
+                            <input type="checkbox" id="darkModeToggle" class="sr-only"> 
+                            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div> 
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div> 
+                        </div> 
+                    </label> 
+                </div> 
+            </div> 
+ 
+            <button id="saveSettings" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 text-lg">Save and Close</button> 
+        </div> 
+    </div> 
+ 
+    <div id="pauseMenuModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100] flex items-center justify-center"> 
+        <div id="pauseMenuContent" class="bg-white rounded-xl w-full max-w-md p-6 md:p-8 shadow-2xl text-center"> 
+            <h3 class="text-3xl font-bold text-gray-800 mb-6">Game Paused ⏸</h3> 
+            <div class="space-y-4"> 
+                <button id="resumeButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-150 text-lg">Resume Game</button> 
+                <button id="restartFromPauseButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-150 text-lg">Restart Challenge</button> 
+                <button id="settingsFromPauseButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition duration-150 text-lg">Open Settings</button> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    <script> 
+ 
+	/*********************************************** 
+   GLOBAL IDLE TIMEOUT SYSTEM (15 MINUTES) 
+************************************************/ 
+let idleTimer = null; 
+const IDLE_LIMIT = 15 * 60 * 1000; // 15 minutes 
+let idleTriggered = false; 
+ 
+let msInterval = null; 
+let lastUpdate = null; 
+ 
+ 
+function resetIdleTimer() { 
+    // If the user interacts AFTER idle timeout → resume automatically 
+    if (idleTriggered) { 
+        resumeFromIdle(); 
+    } 
+ 
+    clearTimeout(idleTimer); 
+    idleTimer = setTimeout(triggerIdleShutdown, IDLE_LIMIT); 
+} 
+ 
+function triggerIdleShutdown() { 
+    console.warn("IDLE LIMIT REACHED — Stopping activity."); 
+    idleTriggered = true; 
+ 
+    stopWelcomeFireworks(); 
+    stopAllSounds(); 
+ 
+    if (typeof pauseGame === "function") { 
+        try { pauseGame(); } catch(e) {} 
+    } 
+}  // <-- THIS closing brace was missing! 
+ 
+ 
+function pauseGame() { 
+    console.warn("Game paused!"); 
+ 
+    gamePaused = true; 
+ 
+    try { clearInterval(timerInterval); } catch(e) {} 
+ 
+    try { 
+        if (masterAudioCtx && masterAudioCtx.state === "running") { 
+            masterAudioCtx.suspend(); 
+        } 
+    } catch(e) {} 
+ 
+    try { stopAllSounds(); } catch(e) {} 
+ 
+    const pauseMenuModal = document.getElementById("pauseMenuModal"); 
+    if (pauseMenuModal) pauseMenuModal.classList.remove("hidden"); 
+} 
+ 
+/*********************************************** 
+   AUTO-RESUME WHEN USER INTERACTS AGAIN 
+************************************************/ 
+function resumeFromIdle() { 
+    console.warn("Resuming after idle timeout."); 
+    idleTriggered = false; 
+ 
+    const pauseMenuModal = document.getElementById("pauseMenuModal"); 
+    if (pauseMenuModal) pauseMenuModal.classList.add("hidden"); 
+ 
+    // Resume timer if game was active 
+    if (typeof resumeGame === "function") { 
+        try { resumeGame(); } catch(e) {} 
+    } 
+ 
+    // Restart fireworks only if user is on Welcome Screen 
+    const welcomeScreen = document.getElementById("welcomeScreen"); 
+    if (!welcomeScreen.classList.contains("hidden")) { 
+        try { startWelcomeFireworks(); } catch(e){} 
+    } 
+} 
+ 
+/*********************************************** 
+   USER ACTIVITY TRIGGERS RESET 
+************************************************/ 
+const activityEvents = [ 
+    "mousemove", "mousedown", "keydown", 
+    "touchstart", "touchmove", "click" 
+]; 
+ 
+activityEvents.forEach(evt => { 
+    document.addEventListener(evt, resetIdleTimer, { passive: true }); 
+}); 
+ 
+// Start initial timer 
+resetIdleTimer(); 
+	/*********************************************** 
+   GLOBAL IDLE TIMEOUT SYSTEM (15 MINUTES) ENDS 
+************************************************/ 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+        // top-level audio context variable (moved out of CSS) 
+        let masterAudioCtx = null; 
+		let scheduledMelodyTimers = []; 
+		 
+ 
+ 
+ 
+/*********************************************** 
+   MP3 AUDIO (W3Schools hosted) — countdown + win/lose 
+   Put files in /sounds: 
+   - Beep1.mp3  (20–6 warning) 
+   - buzzer.mp3 (5–1 warning) 
+   - lose.mp3   (wrong / time up) 
+   - Win.mp3    (correct) 
+   - GameOver.mp3 (optional) 
+************************************************/ 
+const sndWarning20 = new Audio("sounds/Beep1.mp3"); 
+const sndWarning5  = new Audio("sounds/buzzer.mp3"); 
+const sndLose      = new Audio("sounds/lose.mp3"); 
+const sndWin       = new Audio("sounds/Win.mp3"); 
+const sndGameOver  = new Audio("sounds/GameOver.mp3"); 
+ 
+[sndWarning20, sndWarning5, sndLose, sndWin, sndGameOver].forEach(a => { 
+  a.preload = "auto"; 
+  a.volume = 1.0; 
+}); 
+ 
+function playSfx(audioEl) { 
+  try { 
+    audioEl.pause(); 
+    audioEl.currentTime = 0; 
+    const p = audioEl.play(); 
+    if (p && typeof p.catch === "function") p.catch(() => {}); 
+  } catch (e) {} 
+} 
+ 
+function stopMp3Sounds() { 
+  [sndWarning20, sndWarning5, sndLose, sndWin, sndGameOver].forEach(a => { 
+    try { a.pause(); a.currentTime = 0; } catch (e) {} 
+  }); 
+} 
+ 
+function stopAllSounds() { 
+    try { stopMp3Sounds(); } catch(e) {} 
+    // Cancel all scheduled melody timers first 
+    if (scheduledMelodyTimers && scheduledMelodyTimers.length > 0) { 
+        for (const id of scheduledMelodyTimers) { 
+            clearTimeout(id); 
+        } 
+        scheduledMelodyTimers = []; 
+    } 
+ 
+    // If there's no audio engine yet, nothing more to do 
+    if (!masterAudioCtx) return; 
+ 
+    // Close the old context to immediately stop any playing oscillators, 
+    // then recreate a fresh audio context after a short delay. 
+    const oldCtx = masterAudioCtx; 
+    oldCtx.close().catch(() => { /* ignore */ }).finally(() => { 
+        // recreate on next tick to avoid immediate re-use by leftover callbacks 
+        setTimeout(() => { 
+            masterAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+            console.log('Audio context reset'); 
+        }, 30); 
+    }); 
+} 
+ 
+ 
+ 
+ 
+/* ============================================================ 
+   GLOBAL AUDIO CONTEXT (Unlocked by "Initialize Sound" button) 
+============================================================ */ 
+ 
+ 
+function initializeAudio() { 
+    if (!masterAudioCtx) { 
+        masterAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+    } 
+ 
+    // silent unlock pulse 
+    const osc = masterAudioCtx.createOscillator(); 
+    const gain = masterAudioCtx.createGain(); 
+    gain.gain.value = 0; 
+    osc.connect(gain); 
+    gain.connect(masterAudioCtx.destination); 
+    osc.start(); 
+    osc.stop(masterAudioCtx.currentTime + 0.05); 
+ 
+    console.log("Audio initialized"); 
+} 
+ 
+/* ============================================================ 
+   BASE TONE FUNCTION 
+============================================================ */ 
+function playTone(freq = 440, duration = 200, type = "square") { 
+    if (!masterAudioCtx) return; 
+ 
+    const osc = masterAudioCtx.createOscillator(); 
+    const gain = masterAudioCtx.createGain(); 
+ 
+    osc.type = type; 
+    osc.frequency.setValueAtTime(freq, masterAudioCtx.currentTime); 
+ 
+    gain.gain.setValueAtTime(0.25, masterAudioCtx.currentTime); 
+    gain.gain.exponentialRampToValueAtTime( 
+        0.0001, 
+        masterAudioCtx.currentTime + duration / 1000 
+    ); 
+ 
+    osc.connect(gain); 
+    gain.connect(masterAudioCtx.destination); 
+ 
+    osc.start(); 
+    osc.stop(masterAudioCtx.currentTime + duration / 1000); 
+} 
+ 
+ 
+/* ============================================================ 
+   FIREWORKS 
+============================================================ */ 
+ 
+function launchFireworks() { 
+    for (let i = 0; i < 5; i++) {  // Multiple bursts of fireworks 
+        confetti({ 
+            particleCount: 200,       // Amount of particles in each firework burst 
+            spread: 60,               // Wider spread for fireworks 
+            origin: { x: Math.random(), y: Math.random() },  // Random position 
+            shapes: ['circle'],       // Use circular particles to simulate explosions 
+            gravity: 0.3,             // A little gravity for particle fall 
+            scalar: 0.5,              // Smaller size for firework particles 
+            colors: ['#ff5733', '#ffbd33', '#ff033e', '#a834eb', '#00ffff'],  // Bright colors 
+            ticks: 250,               // Keep particles in the air longer 
+            angle: Math.random() * 360, // Random angle for explosion 
+        }); 
+    } 
+} 
+ 
+/* ============================================================ 
+   FIREWORKS Welcome Page : Continuously launch fireworks 
+============================================================ */ 
+ 
+// Start the continuous fireworks loop (idempotent) 
+function startContinuousFireworks() { 
+    // If already running, do nothing 
+    if (fireworksIntervalId) return; 
+ 
+    fireworksIntervalId = setInterval(() => { 
+        if (!fireworksEnabled) return; // If disabled, skip bursts 
+ 
+        for (let i = 0; i < 3; i++) { 
+            confetti({ 
+                particleCount: 200, 
+                spread: 60, 
+                origin: { x: Math.random(), y: Math.random() }, 
+                shapes: ['circle'], 
+                gravity: 0.3, 
+                scalar: 0.5, 
+                colors: ['#ff5733', '#ffbd33', '#ff033e', '#a834eb', '#00ffff'], 
+                ticks: 250, 
+                angle: Math.random() * 360, 
+            }); 
+        } 
+    }, 3000); 
+} 
+ 
+// Stop continuous fireworks entirely 
+function stopContinuousFireworks() { 
+    if (fireworksIntervalId) { 
+        clearInterval(fireworksIntervalId); 
+        fireworksIntervalId = null; 
+    } 
+} 
+ 
+// Toggle fireworks ON/OFF from settings 
+function toggleFireworks(enabled) { 
+    fireworksEnabled = Boolean(enabled); 
+ 
+    if (fireworksEnabled) { 
+        startContinuousFireworks(); 
+        console.log("Fireworks resumed."); 
+    } else { 
+        stopContinuousFireworks(); 
+        console.log("Fireworks paused."); 
+    } 
+} 
+ 
+window.addEventListener('load', () => { 
+    const storedFireworks = localStorage.getItem('fireworksEnabled'); 
+    fireworksEnabled = storedFireworks === null ? true : (storedFireworks === 'enabled'); 
+ 
+    if (fireworksEnabled) startContinuousFireworks(); 
+    else stopContinuousFireworks(); 
+}); 
+ 
+ 
+ 
+ 
+/* ============================================================ 
+   SEQUENCER (meant for melodies / warning patterns) 
+============================================================ */ 
+function playMelody(sequence) { 
+    // schedule notes, but remember each timer so we can cancel them 
+    let delay = 0; 
+    for (const note of sequence) { 
+        const timerId = setTimeout(() => { 
+            // If audio engine isn't ready/running, do nothing 
+            if (!masterAudioCtx || masterAudioCtx.state !== "running") return; 
+ 
+            if (note.freq > 0) { 
+                playTone(note.freq, note.duration, note.type || "square"); 
+            } 
+        }, delay); 
+ 
+        scheduledMelodyTimers.push(timerId); 
+        delay += note.duration; 
+    } 
+} 
+ 
+ 
+/* ============================================================ 
+   SOUND EFFECTS - WARNING / WRONG / VICTORY / DEATH 
+============================================================ */ 
+ 
+/* --- 20 SECOND WARNING (slow urgent beeps) --- */ 
+function playWarning20() { 
+  playSfx(sndWarning20); 
+} 
+ 
+function playWarning5() { 
+  playSfx(sndWarning5); 
+} 
+ 
+ 
+ 
+ 
+ 
+ 
+/* --- WRONG ANSWER (buzzer + sad fall) --- */ 
+function playWrongSound() { 
+  playSfx(sndLose); 
+} 
+ 
+/* --- VICTORY MELODY (your improved version) --- */ 
+function playVictorySound() { 
+  playSfx(sndWin); 
+} 
+ 
+ 
+/* --- DEATH SOUND (sad, taunting retro drop) --- */ 
+function playDeathSound() { 
+  playSfx(sndLose); 
+} 
+ 
+ 
+ 
+        // --- CONSTANTS AND STATE --- 
+        const SHEET_ID = '1fpwO6svgiPJgPLXCc9fzzfJ_SXF2ij5bsuEbEaa81Eo'; 
+        const GID = '627945407'; // GID for the specific sheet tab/page 
+ 
+        let triviaQuestions = []; 
+        let decoyAnswers = []; // Holds all correct answers for use as decoys 
+        let currentQuestionIndex = 0; 
+        let timerInterval = null; 
+        let TIME_PER_QUESTION = 30; // Default time 
+        let SCORE_POINTS = 100; 
+        let timeRemaining = TIME_PER_QUESTION; 
+        let isPaused = false; 
+        let isMultipleChoiceEnabled = true; // State for MC 
+        let correctMcAnswer = null; 
+		// Fireworks / confetti control 
+		let fireworksEnabled = true;        // current on/off state 
+		let fireworksIntervalId = null;     // stores the setInterval id used by continuous fireworks 
+ 
+        // Score Tracker State 
+        let players = []; 
+        let nextPlayerId = 1; 
+ 
+        // --- DOM ELEMENTS --- 
+        const welcomeScreen = document.getElementById('welcomeScreen'); 
+        const gameContent = document.getElementById('gameContent'); 
+        const startGameButton = document.getElementById('startGameButton'); 
+        const initAudioButton = document.getElementById('initAudioButton'); 
+        const questionScreen = document.getElementById('questionScreen'); 
+        const answerScreen = document.getElementById('answerScreen'); 
+        const answerStatusText = document.getElementById('answerStatusText'); 
+        const timerDisplay = document.getElementById('timerDisplay'); 
+        const timerContainer = document.getElementById('timerContainer'); 
+        const questionNumber = document.getElementById('questionNumber'); 
+        const questionText = document.getElementById('questionText'); 
+        const answerText = document.getElementById('answerText'); 
+        const nextQuestionButton = document.getElementById('nextQuestionButton'); 
+        const restartCurrentButton = document.getElementById('restartCurrentButton'); 
+        const skipFromAnswerButton = document.getElementById('skipFromAnswerButton'); 
+		const reviewQuestionButton = document.getElementById('reviewQuestionButton'); 
+        const finalScreen = document.getElementById('finalScreen'); 
+        const restartGameButton = document.getElementById('restartGameButton'); 
+        const hintButton = document.getElementById('hintButton'); 
+        const hintText = document.getElementById('hintText'); 
+        const revealAnswerButton = document.getElementById('revealAnswerButton'); 
+        const skipButton = document.getElementById('skipButton'); 
+        const pauseButton = document.getElementById('pauseButton'); 
+        const settingsButton = document.getElementById('settingsButton'); 
+        const settingsModal = document.getElementById('settingsModal'); 
+        const closeSettings = document.getElementById('closeSettings'); 
+        const saveSettings = document.getElementById('saveSettings'); 
+        const timeInput = document.getElementById('timeInput'); 
+        const scorePointsInput = document.getElementById('scorePointsInput'); 
+        const darkModeToggle = document.getElementById('darkModeToggle'); 
+        const multiChoiceToggle = document.getElementById('multiChoiceToggle'); 
+        const hideScoreTrackerToggle = document.getElementById('hideScoreTrackerToggle'); 
+        const mcOptionsContainer = document.getElementById('mcOptionsContainer'); 
+        const scorePanel = document.getElementById('scorePanel'); 
+        const addPlayerButton = document.getElementById('addPlayerButton'); 
+        const playerListContainer = document.getElementById('playerListContainer'); 
+        const scoreIncrementInput = document.getElementById('scoreIncrementInput'); 
+        const pauseMenuModal = document.getElementById('pauseMenuModal'); 
+        const resumeButton = document.getElementById('resumeButton'); 
+        const restartFromPauseButton = document.getElementById('restartFromPauseButton'); 
+        const settingsFromPauseButton = document.getElementById('settingsFromPauseButton'); 
+		const hintScreen = document.getElementById('hintScreen'); 
+		const hintBox = document.getElementById('hintBox'); 
+		const hintTextOverlay = document.getElementById('hintTextOverlay'); 
+		const hintCloseBtn = document.getElementById('hintCloseBtn'); 
+		 
+ 
+		 
+		 
+		 
+ 
+        // --- HELPER FUNCTIONS --- 
+        function displayStatus(message, colorClass = 'text-gray-600') { 
+		 
+			document.getElementById("timerContainer").classList.remove("hidden"); 
+			 
+            questionText.textContent = message; 
+            questionText.className = `text-3xl font-bold ${colorClass} mb-6 text-center`; 
+            questionScreen.classList.remove('hidden'); 
+        } 
+ 
+        function shuffleArray(array) { 
+            for (let i = array.length - 1; i > 0; i--) { 
+                const j = Math.floor(Math.random() * (i + 1)); 
+                [array[i], array[j]] = [array[j], array[i]]; 
+            } 
+            return array; 
+        } 
+ 
+        function getDecoyAnswers(correctAnswer, allAnswers) { 
+            const decoys = new Set(); 
+            const numAnswer = parseFloat(correctAnswer); 
+            if (!isNaN(numAnswer)) { 
+                decoys.add(String(numAnswer + 1)); 
+                decoys.add(String(Math.max(0, numAnswer - 1))); 
+                decoys.add(String(numAnswer * 2)); 
+            } 
+            const filteredAnswers = allAnswers.filter(a => a !== correctAnswer); 
+            while (decoys.size < 3) { 
+                if (filteredAnswers.length === 0) break; 
+                const randomIndex = Math.floor(Math.random() * filteredAnswers.length); 
+                const decoy = filteredAnswers[randomIndex]; 
+                if (!decoys.has(decoy) && decoy !== correctAnswer) { 
+                    decoys.add(decoy); 
+                } 
+                filteredAnswers.splice(randomIndex, 1); 
+            } 
+            return Array.from(decoys).slice(0, 3); 
+        } 
+ 
+        function applyDarkMode(enabled) { 
+            if (enabled) { 
+                document.body.classList.add('dark'); 
+            } else { 
+                document.body.classList.remove('dark'); 
+            } 
+        } 
+ 
+function applyScoreTrackerVisibility(isHidden) { 
+    if (isHidden) { 
+        // Hide the Score Panel 
+        scorePanel.classList.add('hidden'); 
+ 
+        // Activate fullscreen mode on body 
+        document.body.classList.add('fullscreen-mode'); 
+    } else { 
+        // Show the Score Panel 
+        scorePanel.classList.remove('hidden'); 
+ 
+        // Disable fullscreen mode 
+        document.body.classList.remove('fullscreen-mode'); 
+    } 
+} 
+ 
+		 
+		 
+		function hideHint() { 
+    // animate out 
+    hintScreen.classList.remove('active'); 
+    hintBox.classList.remove('active'); 
+ 
+    // fully hide after animation completes 
+    setTimeout(() => { 
+        hintScreen.classList.add('hidden'); 
+        // re-enable hint button if you want it reusable during the question 
+        hintButton.disabled = false; 
+        // keep timer paused until user restarts or resumes 
+        // (don't auto-start the timer) 
+    }, 260); 
+} 
+ 
+// close handlers 
+hintCloseBtn.addEventListener('click', hideHint); 
+ 
+// optional: click outside box closes the hint (click on backdrop) 
+hintScreen.addEventListener('click', (e) => { 
+    if (e.target === hintScreen) hideHint(); 
+}); 
+ 
+// optional: allow ESC key to close when hint is visible 
+document.addEventListener('keydown', (e) => { 
+    if (e.key === 'Escape' && hintScreen.classList.contains('active')) { 
+        hideHint(); 
+    } 
+}); 
+ 
+		 
+		 
+		 
+		function enableAllOptions() { 
+    const optionButtons = document.querySelectorAll('.option-button'); 
+ 
+    optionButtons.forEach(btn => { 
+        btn.disabled = false; 
+        btn.classList.remove('opacity-50'); // if you fade them 
+    }); 
+} 
+ 
+ 
+        // --- GOOGLE VISUALIZATION/DATA FUNCTIONS --- 
+        function initGoogle() { 
+            google.charts.load('current', {packages: ['corechart']}); 
+            google.charts.setOnLoadCallback(fetchTriviaData); 
+        } 
+ 
+        function fetchTriviaData() { 
+            displayStatus("Fetching trivia questions...", 'text-indigo-600'); 
+            const QUERY = 'select A,B,C,D'; 
+            const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json&tq=` + encodeURIComponent(QUERY); 
+            const query = new google.visualization.Query(DATA_URL); 
+            query.send(handleQueryResponse); 
+        } 
+ 
+        function handleQueryResponse(response) { 
+            if (response.isError()) { 
+                console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage()); 
+                displayStatus(`Data fetch failed: ${response.getMessage()}. Check your SHEET_ID and sharing settings.`, 'text-red-700'); 
+                startGameButton.disabled = true; 
+                return; 
+            } 
+            const dataTable = response.getDataTable(); 
+            triviaQuestions = []; 
+            decoyAnswers = []; 
+            for (let i = 0; i < dataTable.getNumberOfRows(); i++) { 
+                const question = dataTable.getValue(i, 0); 
+                const answer = dataTable.getValue(i, 1); 
+                const hint = dataTable.getValue(i, 2); 
+                const nearCorrectDummy = dataTable.getValue(i, 3); 
+                if (question && answer) { 
+                    triviaQuestions.push({ question, answer, hint, nearCorrectDummy }); 
+                    decoyAnswers.push(answer); 
+                } 
+            } 
+            shuffleArray(triviaQuestions); 
+            if (triviaQuestions.length > 0) { 
+                displayStatus(`Loaded ${triviaQuestions.length} questions. Ready to start!`, 'text-green-600'); 
+                startGameButton.disabled = false; 
+            } else { 
+                displayStatus("No valid questions found in the sheet. Check columns A and B.", 'text-red-700'); 
+            } 
+        } 
+ 
+        // --- GAME FLOW FUNCTIONS --- 
+        function startGame() { 
+            // Unlock audio on first user action (required by browsers) 
+            if (!window.audioUnlocked) { 
+                window.audioUnlocked = true; 
+                // we used oscillator-based audio; no legacy <audio> elements to play here 
+            } 
+ 
+            TIME_PER_QUESTION = parseInt(localStorage.getItem('timeInput')) || 30; 
+            SCORE_POINTS = parseInt(localStorage.getItem('scorePointsInput')) || 100; 
+            isMultipleChoiceEnabled = localStorage.getItem('multiChoiceMode') === 'enabled'; 
+ 
+            timeRemaining = TIME_PER_QUESTION; 
+            currentQuestionIndex = 0; 
+ 
+            welcomeScreen.classList.add('hidden'); 
+            gameContent.classList.remove('hidden'); 
+            finalScreen.classList.add('hidden'); 
+ 
+            showQuestion(currentQuestionIndex); 
+        } 
+ 
+        function showQuestion(index) { 
+			stopAllSounds(); 
+            if (triviaQuestions.length === 0) return; 
+            clearInterval(timerInterval); 
+			answerText.classList.remove('big-answer'); 
+			document.getElementById("timerContainer").classList.remove("hidden"); 
+			 
+ 
+             
+			    if (window._returningFromReview) { 
+        // coming back from Review — keep paused and clear the flag 
+        isPaused = true; 
+        window._returningFromReview = false; 
+    } else { 
+        isPaused = false; 
+    } 
+			 
+            timeRemaining = TIME_PER_QUESTION; 
+ 
+// Timer Block Reset 
+timerContainer.classList.remove('bg-red-500', 'bg-yellow-200', 'bg-green-500'); 
+timerContainer.classList.add('bg-gray-100'); 
+timerDisplay.style.color = ''; // Reset to default text color 
+timerDisplay.classList.remove('flashing-red'); 
+ 
+// reset falling zoom animation so it will play fresh on next trigger 
+timerDisplay.classList.remove('fall-zoom'); 
+timerDisplay.style.transform = ''; // clear any inline transform (safe) 
+ 
+            answerScreen.classList.add('hidden'); 
+            questionScreen.classList.remove('hidden'); 
+            questionScreen.classList.replace('border-red-600', 'border-indigo-600'); 
+            questionScreen.classList.remove('opacity-50', 'pointer-events-none'); 
+ 
+            const currentQ = triviaQuestions[index]; 
+ 
+            // Update Content 
+            questionNumber.textContent = `Question #${index + 1}`; 
+            questionText.textContent = currentQ.question; 
+ 
+            // Reset Action Buttons 
+            hintButton.textContent = 'Show Hint (H)'; 
+            revealAnswerButton.textContent = 'Reveal Answer (R)'; 
+            pauseButton.textContent = 'Pause ⏸'; 
+ 
+            // Hint Reset 
+            hintText.classList.add('opacity-0'); 
+            if (currentQ.hint) { 
+                hintText.textContent = currentQ.hint; // Pre-load hint text 
+                hintButton.disabled = false; 
+            } else { 
+                hintButton.disabled = true; 
+                hintText.textContent = ''; 
+            } 
+			 
+ 
+            // MC Option Handling 
+            mcOptionsContainer.innerHTML = ''; 
+            if (isMultipleChoiceEnabled) { 
+                const correctAnswer = currentQ.answer; 
+                correctMcAnswer = correctAnswer; 
+ 
+                let allOptions = [correctAnswer]; 
+ 
+                if (currentQ.nearCorrectDummy && currentQ.nearCorrectDummy !== correctAnswer) { 
+                    allOptions.push(currentQ.nearCorrectDummy); 
+                } 
+ 
+                const decoys = getDecoyAnswers(correctAnswer, decoyAnswers); 
+                for (const decoy of decoys) { 
+                    if (!allOptions.includes(decoy) && allOptions.length < 4) { 
+                        allOptions.push(decoy); 
+                    } 
+                } 
+ 
+                const shuffledOptions = shuffleArray(allOptions); 
+ 
+                shuffledOptions.forEach((option, idx) => { 
+                    const button = document.createElement('button'); 
+                    button.id = `mc-option-${String.fromCharCode(65 + idx)}`; 
+                    button.dataset.answer = option; 
+                    button.textContent = `${String.fromCharCode(65 + idx)}. ${option}`; 
+                    button.className = `mc-button option-button bg-white text-gray-800 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-150 shadow-md text-left`; 
+                    button.onclick = handleMultiChoiceClick; 
+                    mcOptionsContainer.appendChild(button); 
+					 
+                }); 
+            } 
+ 
+            // Re-enable buttons 
+            revealAnswerButton.disabled = false; 
+            skipButton.disabled = false; 
+ 
+            // Start the timer 
+            startTimer(); 
+        } 
+ 
+        function handleMultiChoiceClick(event) { 
+            const selectedButton = event.target; 
+            const selectedAnswer = selectedButton.dataset.answer; 
+            const isCorrect = selectedAnswer === correctMcAnswer; 
+ 
+            // Remove generic background and hover to apply specific feedback 
+            document.querySelectorAll('.mc-button').forEach(btn => btn.classList.remove('bg-white', 'hover:bg-gray-100')); 
+ 
+            // Apply color feedback 
+            selectedButton.classList.add(isCorrect ? 'bg-green-500' : 'bg-red-500', 'text-white'); 
+ 
+            if (isCorrect) { 
+                // Correct: disable all buttons, stop timer, reveal 
+                document.querySelectorAll('.mc-button').forEach(btn => btn.disabled = true); 
+                document.querySelectorAll('.mc-button').forEach(btn => { 
+                    if (btn.dataset.answer === correctMcAnswer && btn !== selectedButton) { 
+                        btn.classList.add('bg-green-500', 'text-white'); 
+                    } 
+                }); 
+ 
+                clearInterval(timerInterval); 
+                questionScreen.classList.add('opacity-50', 'pointer-events-none'); 
+                showAnswer(true, SCORE_POINTS, 'answered'); 
+            } else { 
+                // Incorrect: disable only that button, keep timer running 
+                selectedButton.disabled = true; 
+                // Play wrong sound once immediately (oscillator) 
+                try { playWrongSound(); } catch (e) { /* ignore */ } 
+            } 
+        } 
+ 
+        function nextQuestion() { 
+            currentQuestionIndex++; 
+            if (currentQuestionIndex < triviaQuestions.length) { 
+                showQuestion(currentQuestionIndex); 
+            } else { 
+                endGame(); 
+            } 
+        } 
+ 
+        function endGame() { 
+            clearInterval(timerInterval); 
+            gameContent.classList.add('hidden'); 
+            finalScreen.classList.remove('hidden'); 
+            hintButton.disabled = true; 
+            revealAnswerButton.disabled = true; 
+            document.getElementById("timerContainer").classList.remove("hidden"); 
+			skipButton.disabled = true; 
+        } 
+ 
+        function skipQuestion() { 
+            if (isPaused) return; 
+            clearInterval(timerInterval); 
+            nextQuestion(); 
+        } 
+ 
+        function handleTimeUp() { 
+			stopAllSounds(); 
+            document.querySelectorAll('.mc-button').forEach(btn => btn.disabled = true); 
+            questionScreen.classList.add('opacity-50', 'pointer-events-none'); 
+            clearInterval(timerInterval); 
+            timerDisplay.textContent = '0'; 
+            timerContainer.classList.remove('bg-yellow-200'); 
+            timerContainer.classList.add('bg-red-500'); 
+			cancelAnimationFrame(msInterval); 
+			document.getElementById("msDisplay").textContent = "000"; 
+ 
+			 
+			// ensure falling zoom removed on time up 
+timerDisplay.classList.remove('fall-zoom'); 
+ 
+            showAnswer(false, 0, 'timeup'); 
+        } 
+ 
+        function restartCurrentQuestion() { 
+            answerScreen.classList.remove('bg-gray-700'); 
+            nextQuestionButton.classList.remove('hidden'); 
+            restartCurrentButton.classList.add('hidden'); 
+            skipFromAnswerButton.classList.add('hidden'); 
+            answerStatusText.textContent = "The Correct Answer Is:"; 
+            showQuestion(currentQuestionIndex); 
+        } 
+ 
+        function skipFromTimeUp() { 
+            answerScreen.classList.remove('bg-gray-700'); 
+            nextQuestionButton.classList.remove('hidden'); 
+            restartCurrentButton.classList.add('hidden'); 
+            skipFromAnswerButton.classList.add('hidden'); 
+            answerStatusText.textContent = "The Correct Answer Is:"; 
+            nextQuestion(); 
+        } 
+ 
+        function showAnswer(isCorrect, scoreChange, state = 'revealed') { 
+		stopMilliseconds(); 
+		 
+			reviewQuestionButton.classList.add('hidden'); // default hidden, will show only for timeup 
+			stopAllSounds(); 
+            clearInterval(timerInterval); 
+            questionScreen.classList.add('hidden'); 
+            answerScreen.classList.remove('hidden'); 
+ 
+            const currentQ = triviaQuestions[currentQuestionIndex]; 
+			 
+ 
+            // Update screen styles based on result 
+            answerScreen.classList.remove('bg-red-500', 'bg-green-500', 'bg-gray-700', 'bg-gray-500'); 
+ 
+            if (state === 'timeup') { 
+                answerScreen.classList.add('bg-gray-700'); 
+                answerStatusText.textContent = "Time's Up!"; 
+                answerText.textContent = ''; // Keep answer hidden 
+                nextQuestionButton.classList.add('hidden'); 
+                restartCurrentButton.classList.remove('hidden'); 
+                skipFromAnswerButton.classList.remove('hidden'); 
+				reviewQuestionButton.classList.remove('hidden'); 
+ 
+                try { playDeathSound(); } catch (e) {} 
+ 
+            } else if (state === 'skipped' || state === 'revealed') { 
+                answerScreen.classList.add('bg-gray-500'); 
+                answerStatusText.textContent = state === 'skipped' ? "Question Skipped! The Answer Was:" : "The Answer Was:"; 
+                answerText.textContent = currentQ ? currentQ.answer : ''; 
+				answerText.classList.add('big-answer'); 
+                nextQuestionButton.classList.remove('hidden'); 
+                restartCurrentButton.classList.add('hidden'); 
+                skipFromAnswerButton.classList.add('hidden'); 
+ 
+            } else if (state === 'answered') { 
+			 
+					// HIDE TIMER WHEN ANSWER IS SHOWN 
+					document.getElementById("timerContainer").classList.add("hidden"); 
+ 
+                answerScreen.classList.add(isCorrect ? 'bg-green-500' : 'bg-red-500'); 
+                answerStatusText.textContent = isCorrect ? "Correct! The Answer Is:" : "Incorrect! The Answer Was:"; 
+                answerText.textContent = currentQ ? currentQ.answer : ''; 
+				answerText.classList.add('big-answer'); 
+ 
+                if (isCorrect) { 
+                    try { playVictorySound(); } catch (e) {} 
+					 
+                     
+					        // Trigger both confetti and fireworks when the answer is correct 
+						confetti({  
+						particleCount: 100,  
+						spread: 70,  
+						origin: { y: 0.6 } 
+						}); 
+ 
+							// Fireworks-style confetti 
+						launchFireworks();  // Call the fireworks function (added below) 
+					 
+					 
+                } else { 
+                    try { playWrongSound(); } catch(e) {} 
+                } 
+ 
+                nextQuestionButton.classList.remove('hidden'); 
+                restartCurrentButton.classList.add('hidden'); 
+                skipFromAnswerButton.classList.add('hidden'); 
+            } 
+ 
+            setTimeout(() => { nextQuestionButton.focus(); }, 100); 
+        } 
+ 
+        // --- TIMER FUNCTIONS --- 
+        function startTimer() { 
+            updateTimerDisplay(); 
+			lastUpdate = performance.now(); 
+            timerInterval = setInterval(() => { 
+                if (isPaused) return; 
+                timeRemaining--; 
+                updateTimerDisplay(); 
+                if (timeRemaining <= 0) { 
+                    handleTimeUp(); 
+                } 
+            }, 1000); 
+			msInterval = requestAnimationFrame(updateMilliseconds); 
+        } 
+		 
+		function updateMilliseconds(timestamp) { 
+    if (isPaused || timeRemaining <= 0) { 
+        document.getElementById("msDisplay").textContent = "000"; 
+        return; 
+    } 
+ 
+    const diff = timestamp - lastUpdate; 
+    const ms = 1000 - (diff % 1000); 
+ 
+    document.getElementById("msDisplay").textContent = 
+        ms.toFixed(0).padStart(3, '0'); 
+ 
+    msInterval = requestAnimationFrame(updateMilliseconds); 
+} 
+ 
+function stopMilliseconds() { 
+    try { cancelAnimationFrame(msInterval); } catch(e) {} 
+    const msDisplay = document.getElementById("msDisplay"); 
+    if (msDisplay) msDisplay.textContent = "000"; 
+} 
+ 
+ 
+ 
+function updateTimerDisplay() { 
+    timerDisplay.textContent = timeRemaining; 
+    timerContainer.classList.remove('bg-yellow-200', 'bg-red-500', 'bg-gray-100'); 
+    timerDisplay.classList.remove('flashing-red'); 
+ 
+    if (timeRemaining <= 20 && timeRemaining > 5) { 
+        timerContainer.classList.add('bg-yellow-200'); 
+        try { playWarning20(); } catch(e) {} 
+    } else if (timeRemaining <= 5 && timeRemaining > 0) { 
+        timerContainer.classList.add('bg-red-500'); 
+        timerDisplay.classList.add('flashing-red'); 
+ 
+        // --- FALLING-ZOOM ANIMATION TRIGGER --- 
+        // remove then re-add to restart animation 
+        timerDisplay.classList.remove('fall-zoom'); 
+        void timerDisplay.offsetWidth; // force reflow to reset animation 
+        timerDisplay.classList.add('fall-zoom'); 
+ 
+        try { playWarning5(); } catch(e) {} 
+    } else if (timeRemaining <= 0) { 
+        // handled elsewhere (time up) 
+        // ensure animation class removed when time's up 
+        timerDisplay.classList.remove('fall-zoom'); 
+    } else { 
+        timerContainer.classList.add('bg-gray-100'); 
+    } 
+} 
+ 
+ 
+function togglePause() { 
+    if (gameContent.classList.contains('hidden')) return; 
+ 
+    isPaused = !isPaused; 
+ 
+    if (isPaused) { 
+        clearInterval(timerInterval); 
+        pauseButton.textContent = 'Resume ▶'; 
+ 
+        if (masterAudioCtx && masterAudioCtx.state === "running") { 
+            masterAudioCtx.suspend(); 
+        } 
+ 
+        pauseMenuModal.classList.remove('hidden'); 
+    } else { 
+        pauseButton.textContent = 'Pause ⏸'; 
+        pauseMenuModal.classList.add('hidden'); 
+ 
+        if (masterAudioCtx && masterAudioCtx.state === "suspended") { 
+            masterAudioCtx.resume(); 
+        } 
+ 
+        startTimer(); 
+    } 
+} 
+ 
+ 
+function pauseGame() { 
+    if (!isPaused) { 
+        togglePause(); 
+    } 
+} 
+ 
+function resumeGame() { 
+    if (isPaused) { 
+        togglePause(); 
+    } 
+} 
+ 
+ 
+ 
+ 
+ 
+        // --- SETTINGS FUNCTIONS --- 
+function openSettingsModal() { 
+    // Always try to get it fresh (modal loads before content exists) 
+    const fireworksToggle = document.getElementById('fireworksToggle'); 
+ 
+    if (gameContent.classList.contains('hidden') === false) { 
+        isPaused = true; 
+        clearInterval(timerInterval); 
+    } 
+ 
+    timeInput.value = TIME_PER_QUESTION; 
+    scorePointsInput.value = SCORE_POINTS; 
+    darkModeToggle.checked = localStorage.getItem('darkMode') === 'enabled'; 
+    multiChoiceToggle.checked = localStorage.getItem('multiChoiceMode') === 'enabled'; 
+    hideScoreTrackerToggle.checked = localStorage.getItem('hideScoreTracker') === 'enabled'; 
+ 
+    updateToggleDot(darkModeToggle); 
+    updateToggleDot(multiChoiceToggle); 
+    updateToggleDot(hideScoreTrackerToggle); 
+ 
+	fireworksToggle.addEventListener('change', function () { 
+    localStorage.setItem('fireworksEnabled', this.checked ? 'enabled' : 'disabled'); 
+    updateToggleDot(this); 
+    toggleFireworks(this.checked); 
+}); 
+ 
+	 
+	const savedFireworks = localStorage.getItem('fireworksEnabled'); 
+fireworksToggle.checked = savedFireworks === 'enabled'; 
+updateToggleDot(fireworksToggle); 
+	 
+ 
+    settingsModal.classList.remove('hidden'); 
+ 
+    if (masterAudioCtx && masterAudioCtx.state === "running") { 
+        masterAudioCtx.suspend(); 
+    } 
+} 
+ 
+ 
+        function closeSettingsModal() { 
+            settingsModal.classList.add('hidden'); 
+            if (pauseMenuModal.classList.contains('hidden') === false) { 
+                // If the pause menu is open, the game should remain paused 
+            } else if (gameContent.classList.contains('hidden') === false) { 
+                isPaused = false; 
+                startTimer(); 
+            } 
+			if (masterAudioCtx && masterAudioCtx.state === "suspended") { 
+    masterAudioCtx.resume(); 
+} 
+ 
+			 
+        } 
+ 
+        function saveSettingsAndClose() { 
+            const newTime = parseInt(timeInput.value); 
+            const newScore = parseInt(scorePointsInput.value); 
+            const darkModeEnabled = darkModeToggle.checked; 
+            const mcEnabled = multiChoiceToggle.checked; 
+            const hideScoreTrackerEnabled = hideScoreTrackerToggle.checked; 
+			 
+ 
+            if (newTime >= 5 && newTime <= 120 && newScore >= 1) { 
+                TIME_PER_QUESTION = newTime; 
+                SCORE_POINTS = newScore; 
+                isMultipleChoiceEnabled = mcEnabled; 
+ 
+                localStorage.setItem('timeInput', newTime); 
+                localStorage.setItem('scorePointsInput', newScore); 
+                localStorage.setItem('darkMode', darkModeEnabled ? 'enabled' : 'disabled'); 
+                localStorage.setItem('multiChoiceMode', mcEnabled ? 'enabled' : 'disabled'); 
+                localStorage.setItem('hideScoreTracker', hideScoreTrackerEnabled ? 'enabled' : 'disabled'); 
+ 
+                applyDarkMode(darkModeEnabled); 
+                applyScoreTrackerVisibility(hideScoreTrackerEnabled); 
+ 
+                settingsModal.classList.add('hidden'); 
+ 
+                // Reset game view if needed 
+                clearInterval(timerInterval); 
+                welcomeScreen.classList.add('hidden'); 
+                finalScreen.classList.add('hidden'); 
+                gameContent.classList.remove('hidden'); 
+                currentQuestionIndex = 0; 
+                timeRemaining = TIME_PER_QUESTION; 
+                showQuestion(currentQuestionIndex); 
+                applyScoreTrackerVisibility(hideScoreTrackerEnabled); 
+ 
+            } else { 
+                alert("Please enter valid numbers for time (5–120 seconds) and score (1+)."); 
+            } 
+        } 
+ 
+        // --- SCORE TRACKER FUNCTIONS --- 
+        function initializeScoreTracker() { 
+            const savedPlayers = JSON.parse(localStorage.getItem('triviaPlayers')); 
+            if (savedPlayers && savedPlayers.length > 0) { 
+                players = savedPlayers; 
+                nextPlayerId = players.reduce((max, p) => Math.max(max, p.id), 0) + 1; 
+            } else { 
+                addPlayer('Player 1'); 
+            } 
+            renderPlayerList(); 
+        } 
+ 
+        function savePlayers() { 
+            localStorage.setItem('triviaPlayers', JSON.stringify(players)); 
+        } 
+ 
+        function addPlayer(name = `Player ${nextPlayerId}`) { 
+            players.push({ id: nextPlayerId++, name: name, score: 0 }); 
+            savePlayers(); 
+            renderPlayerList(); 
+        } 
+ 
+        function removePlayer(id) { 
+            players = players.filter(p => p.id !== id); 
+            savePlayers(); 
+            renderPlayerList(); 
+        } 
+ 
+        function changeScore(id, amount) { 
+            const player = players.find(p => p.id === id); 
+            if (player) { 
+                player.score += amount; 
+                if (player.score < 0) player.score = 0; 
+                savePlayers(); 
+                renderPlayerList(); 
+            } 
+        } 
+ 
+        function renderPlayerList() { 
+            playerListContainer.innerHTML = ''; 
+            players.sort((a, b) => b.score - a.score); 
+            players.forEach((player, index) => { 
+                const playerDiv = document.createElement('div'); 
+                playerDiv.className = 'flex items-center p-3 border-b border-gray-200 dark:border-gray-700'; 
+ 
+                const rankSpan = document.createElement('span'); 
+                rankSpan.className = `text-xl font-bold w-8 text-center ${index === 0 ? 'text-yellow-600' : 'text-gray-500'}`; 
+                rankSpan.textContent = index === 0 ? '👑' : `#${index + 1}`; 
+                playerDiv.appendChild(rankSpan); 
+ 
+                const infoDiv = document.createElement('div'); 
+                infoDiv.className = 'flex-1 min-w-0'; 
+ 
+                const nameInput = document.createElement('input'); 
+                nameInput.type = 'text'; 
+                nameInput.value = player.name; 
+                nameInput.className = 'w-full text-lg font-semibold border-b border-transparent focus:border-indigo-500 bg-transparent'; 
+                nameInput.onchange = (e) => { 
+                    player.name = e.target.value || `Player ${player.id}`; 
+                    savePlayers(); 
+                }; 
+                infoDiv.appendChild(nameInput); 
+ 
+                const scoreSpan = document.createElement('span'); 
+                scoreSpan.className = 'text-2xl font-bold text-indigo-600'; 
+                scoreSpan.textContent = player.score; 
+                infoDiv.appendChild(scoreSpan); 
+ 
+                playerDiv.appendChild(infoDiv); 
+ 
+                const buttonGroup = document.createElement('div'); 
+                buttonGroup.className = 'flex flex-col ml-3 space-y-1'; 
+                const incrementAmount = parseInt(scoreIncrementInput.value) || 1; 
+ 
+                const plusButton = document.createElement('button'); 
+                plusButton.textContent = '+'; 
+                plusButton.className = 'w-8 h-8 bg-green-500 text-white rounded-full hover:bg-green-600 transition duration-150 font-bold text-sm'; 
+                plusButton.onclick = () => changeScore(player.id, incrementAmount); 
+                buttonGroup.appendChild(plusButton); 
+ 
+                const minusButton = document.createElement('button'); 
+                minusButton.textContent = '-'; 
+                minusButton.className = 'w-8 h-8 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-150 font-bold text-sm'; 
+                minusButton.onclick = () => changeScore(player.id, -incrementAmount); 
+                buttonGroup.appendChild(minusButton); 
+ 
+                const deleteButton = document.createElement('button'); 
+                deleteButton.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path></svg>'; 
+                deleteButton.className = 'w-8 h-8 mt-1 text-gray-400 hover:text-red-500 transition duration-150 flex items-center justify-center'; 
+                deleteButton.onclick = () => { 
+                    if(confirm(`Remove ${player.name}?`)) removePlayer(player.id); 
+                }; 
+                buttonGroup.appendChild(deleteButton); 
+ 
+                playerDiv.appendChild(buttonGroup); 
+                playerListContainer.appendChild(playerDiv); 
+            }); 
+        } 
+ 
+        // --- EVENT LISTENERS --- 
+        // Initialize audio WITHOUT starting the game 
+        initAudioButton.addEventListener("click", () => { 
+            initializeAudio(); 
+ 
+            // Visual feedback 
+            initAudioButton.textContent = "Sound Ready!"; 
+            initAudioButton.disabled = true; 
+ 
+            // Reveal the actual Start Game button 
+            startGameButton.classList.remove("hidden"); 
+        }); 
+ 
+        // Start the actual game (only after audio initialized and user clicks start) 
+        startGameButton.addEventListener("click", () => { 
+            startGame(); 
+        }); 
+ 
+        function initializeAudio() { 
+            if (!masterAudioCtx) { 
+                masterAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+            } 
+ 
+            // Silent unlock tone 
+            const osc = masterAudioCtx.createOscillator(); 
+            const gain = masterAudioCtx.createGain(); 
+            gain.gain.value = 0; 
+            osc.connect(gain); 
+            gain.connect(masterAudioCtx.destination); 
+            osc.start(); 
+            osc.stop(masterAudioCtx.currentTime + 0.05); 
+ 
+            console.log("Audio initialized"); 
+        } 
+ 
+nextQuestionButton.addEventListener('click', () => { 
+    stopAllSounds(); 
+    nextQuestion(); 
+}); 
+ 
+ 
+reviewQuestionButton.addEventListener('click', () => { 
+    stopAllSounds(); 
+    clearInterval(timerInterval); 
+ 
+    // Close Time’s Up modal 
+    answerScreen.classList.add('hidden'); 
+ 
+    // Re-enable question screen completely 
+    questionScreen.classList.remove('hidden'); 
+    questionScreen.classList.remove('opacity-50', 'pointer-events-none'); 
+ 
+    // ⭐ Force regenerate MC options to restore fresh enabled buttons 
+    const index = currentQuestionIndex; 
+    const currentQ = triviaQuestions[index]; 
+    const correctAnswer = currentQ.answer; 
+ 
+    mcOptionsContainer.innerHTML = ''; 
+    correctMcAnswer = correctAnswer; 
+ 
+    let allOptions = [correctAnswer]; 
+    if (currentQ.nearCorrectDummy && currentQ.nearCorrectDummy !== correctAnswer) { 
+        allOptions.push(currentQ.nearCorrectDummy); 
+    } 
+    const decoys = getDecoyAnswers(correctAnswer, decoyAnswers); 
+    for (const d of decoys) { 
+        if (!allOptions.includes(d) && allOptions.length < 4) allOptions.push(d); 
+    } 
+    shuffleArray(allOptions); 
+ 
+    allOptions.forEach((opt, i) => { 
+        const btn = document.createElement('button'); 
+        btn.id = `mc-option-${String.fromCharCode(65 + i)}`; 
+        btn.dataset.answer = opt; 
+        btn.textContent = `${String.fromCharCode(65 + i)}. ${opt}`; 
+        btn.className = `mc-button option-button bg-white text-gray-800 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-150 shadow-md text-left`; 
+        btn.onclick = handleMultiChoiceClick; 
+        mcOptionsContainer.appendChild(btn); 
+    }); 
+ 
+    // Re-enable the other buttons 
+    hintButton.disabled = false; 
+    revealAnswerButton.disabled = false; 
+    skipButton.disabled = false; 
+ 
+    // Pause timer and freeze value 
+    isPaused = true; 
+    timeRemaining = 0; 
+    updateTimerDisplay(); 
+ 
+    // Hide Review button again 
+    reviewQuestionButton.classList.add('hidden'); 
+}); 
+ 
+ 
+ 
+ 
+ 
+ 
+        restartGameButton.addEventListener('click', startGame); 
+		 
+		 
+hintButton.addEventListener('click', () => { 
+ 
+    // Fill overlay text from the existing hint text (which showQuestion preloads) 
+    // If the small hintText is used, take its value; otherwise show fallback. 
+    const overlayText = (hintText && hintText.textContent && hintText.textContent.trim()) || "No hint available."; 
+    hintTextOverlay.textContent = overlayText; 
+ 
+    // Show overlay 
+    hintScreen.classList.remove('hidden'); 
+    // small timeout so the browser has applied the 'hidden' removal, then add active classes for transition 
+    setTimeout(() => { 
+        hintScreen.classList.add('active'); 
+        hintBox.classList.add('active'); 
+    }, 20); 
+ 
+    // disable the hint button once shown (to match previous behavior) 
+    hintButton.disabled = true; 
+	 
+	// AUTO-CLOSE AFTER 3 SECONDS 
+setTimeout(() => { 
+    hideHint(); 
+}, 15000); 
+}); 
+ 
+		 
+ 
+        revealAnswerButton.addEventListener('click', () => { 
+			stopAllSounds(); 
+            clearInterval(timerInterval); 
+            showAnswer(false, 0, 'revealed'); 
+			 
+ 
+        }); 
+skipButton.addEventListener('click', () => { 
+    stopAllSounds(); 
+    skipQuestion(); 
+}); 
+        pauseButton.addEventListener('click', togglePause); 
+ 
+        resumeButton.addEventListener('click', togglePause); 
+        restartFromPauseButton.addEventListener('click', () => { 
+            pauseMenuModal.classList.add('hidden'); 
+            startGame(); 
+        }); 
+        settingsFromPauseButton.addEventListener('click', () => { 
+            pauseMenuModal.classList.add('hidden'); 
+            openSettingsModal(); 
+        }); 
+ 
+        settingsButton.addEventListener('click', openSettingsModal); 
+        closeSettings.addEventListener('click', closeSettingsModal); 
+        saveSettings.addEventListener('click', saveSettingsAndClose); 
+ 
+        restartCurrentButton.addEventListener('click', restartCurrentQuestion); 
+        skipFromAnswerButton.addEventListener('click', skipFromTimeUp); 
+ 
+        function updateToggleDot(toggle) { 
+            if (!toggle) return; 
+            const dot = toggle.parentElement.querySelector('.dot'); 
+            if (!dot) return; 
+            if (toggle.checked) { 
+                dot.classList.add('translate-x-6'); 
+            } else { 
+                dot.classList.remove('translate-x-6'); 
+            } 
+        } 
+ 
+        darkModeToggle.addEventListener('change', function() { 
+            localStorage.setItem('darkMode', this.checked ? 'enabled' : 'disabled'); 
+            applyDarkMode(this.checked); 
+            updateToggleDot(this); 
+        }); 
+ 
+        multiChoiceToggle.addEventListener('change', function() { 
+            localStorage.setItem('multiChoiceMode', this.checked ? 'enabled' : 'disabled'); 
+            updateToggleDot(this); 
+        }); 
+ 
+        hideScoreTrackerToggle.addEventListener('change', function() { 
+            localStorage.setItem('hideScoreTracker', this.checked ? 'enabled' : 'disabled'); 
+            applyScoreTrackerVisibility(this.checked); 
+            updateToggleDot(this); 
+        }); 
+ 
+        addPlayerButton.addEventListener('click', () => addPlayer()); 
+ 
+        document.addEventListener('keydown', (e) => { 
+            if (settingsModal.classList.contains('hidden') === false || pauseMenuModal.classList.contains('hidden') === false) return; 
+            if (gameContent.classList.contains('hidden')) return; 
+ 
+            if (e.key === ' ' && !e.target.closest('button, input')) { 
+                e.preventDefault(); 
+                togglePause(); 
+            } 
+ 
+            if (answerScreen.classList.contains('hidden') === false) { 
+                if (e.key === 'Enter' || e.key === ' ') { 
+                    e.preventDefault(); 
+                    if (!restartCurrentButton.classList.contains('hidden')) { 
+                        restartCurrentButton.click(); 
+                    } else if (!skipFromAnswerButton.classList.contains('hidden')) { 
+                        skipFromAnswerButton.click(); 
+                    } else if (!nextQuestionButton.classList.contains('hidden')) { 
+                        nextQuestionButton.click(); 
+                    } 
+                } else if (e.key.toUpperCase() === 'R' && !restartCurrentButton.classList.contains('hidden')) { 
+                    restartCurrentButton.click(); 
+                } else if (e.key.toUpperCase() === 'S' && !skipFromAnswerButton.classList.contains('hidden')) { 
+                    skipFromAnswerButton.click(); 
+                } 
+            } else if (questionScreen.classList.contains('hidden') === false && isPaused === false) { 
+                if (e.key.toUpperCase() === 'H' && !hintButton.disabled) { 
+                    hintButton.click(); 
+                } else if (e.key.toUpperCase() === 'R' && !revealAnswerButton.disabled) { 
+                    revealAnswerButton.click(); 
+                } else if (e.key.toUpperCase() === 'S' && !skipButton.disabled) { 
+                    skipButton.click(); 
+                } else if (isMultipleChoiceEnabled) { 
+                    const optionKey = e.key.toUpperCase(); 
+                    if (optionKey >= 'A' && optionKey <= 'D') { 
+                        const mcButton = document.getElementById(`mc-option-${optionKey}`); 
+                        if (mcButton && !mcButton.disabled) { 
+                            mcButton.click(); 
+                        } 
+                    } 
+                } 
+            } 
+			 
+        }); 
+		 
+ 
+document.addEventListener("visibilitychange", () => { 
+    if (document.hidden) { 
+        pauseGame(); 
+    } 
+}); 
+ 
+		 
+ 
+        // Initialize Google loader and UI defaults 
+        initGoogle(); 
+ 
+        // DARK MODE INITIALIZATION 
+        const savedMode = localStorage.getItem('darkMode'); 
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches; 
+ 
+        if (savedMode === 'enabled' || (savedMode === null && prefersDark)) { 
+            darkModeToggle.checked = true; 
+            applyDarkMode(true); 
+        } else { 
+            darkModeToggle.checked = false; 
+            applyDarkMode(false); 
+        } 
+ 
+        // MULTIPLE CHOICE MODE INITIALIZATION 
+        const savedMultiChoice = localStorage.getItem('multiChoiceMode'); 
+        if (savedMultiChoice === 'enabled') { 
+            multiChoiceToggle.checked = true; 
+            isMultipleChoiceEnabled = true; 
+        } else { 
+            multiChoiceToggle.checked = false; 
+            isMultipleChoiceEnabled = false; 
+        } 
+ 
+        // HIDE SCORE TRACKER INITIALIZATION 
+        const savedHideTracker = localStorage.getItem('hideScoreTracker'); 
+        if (savedHideTracker === 'enabled') { 
+            hideScoreTrackerToggle.checked = true; 
+            applyScoreTrackerVisibility(true); 
+        } else { 
+            hideScoreTrackerToggle.checked = false; 
+            applyScoreTrackerVisibility(false); 
+        } 
+ 
+        // Apply visual toggle dots based on checked states 
+        updateToggleDot(darkModeToggle); 
+        updateToggleDot(multiChoiceToggle); 
+        updateToggleDot(hideScoreTrackerToggle); 
+ 
+        // Initialize settings input values from localStorage or defaults 
+        timeInput.value = localStorage.getItem('timeInput') || 30; 
+        scorePointsInput.value = localStorage.getItem('scorePointsInput') || 100; 
+        TIME_PER_QUESTION = parseInt(timeInput.value); 
+        SCORE_POINTS = parseInt(scorePointsInput.value); 
+ 
+        // Initialize the dynamic score tracker 
+        initializeScoreTracker(); 
+    </script> 
+</body> 
+</html> 
