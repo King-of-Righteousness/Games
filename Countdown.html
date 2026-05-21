@@ -1,44 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Countdown Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .ct-root *, .ct-root *::before, .ct-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  .ct-root {
-    --bg: var(--color-background-tertiary, #f4f3f0);
-    --surface: var(--color-background-primary, #fff);
-    --border: var(--color-border-tertiary);
+  :root {
+    --bg: #0d0d12;
+    --surface: #16161f;
+    --border: #252535;
     --accent: #7c6af7;
-    --accent-glow: rgba(124, 106, 247, 0.18);
-    --danger: #e24b4a;
-    --text: var(--color-text-primary);
-    --muted: var(--color-text-secondary);
-    --green: #3b9e6a;
-    min-height: 560px;
+    --accent-glow: rgba(124, 106, 247, 0.25);
+    --danger: #f04f4f;
+    --danger-glow: rgba(240, 79, 79, 0.25);
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --green: #42c97e;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1rem;
-    font-family: 'DM Sans', var(--font-sans), sans-serif;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,106,247,0.08) 0%, transparent 70%);
   }
 
-  .ct-card {
+  .card {
     background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--border-radius-xl, 20px);
-    padding: 36px 40px 32px;
-    width: 380px;
-    max-width: 96vw;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 40px 44px 36px;
+    width: 420px;
+    max-width: 95vw;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    transition: border-color 0.3s;
+    gap: 28px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 24px 64px rgba(0,0,0,0.5);
+    transition: box-shadow 0.4s ease;
   }
 
-  .ct-card.flash { border-color: var(--danger); }
+  .card.flash {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 0 40px var(--danger-glow),
+      0 24px 64px rgba(0,0,0,0.5);
+    animation: pulseCard 0.5s infinite;
+  }
 
-  .ct-header {
+  @keyframes pulseCard {
+    0%, 100% { border-color: var(--border); }
+    50% { border-color: rgba(240,79,79,0.5); }
+  }
+
+  /* Header */
+  .header {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -46,36 +72,41 @@
     width: 100%;
   }
 
-  .ct-dot-row { display: flex; gap: 7px; }
+  .dot-row {
+    display: flex;
+    gap: 7px;
+  }
 
-  .ct-dot {
-    width: 8px; height: 8px;
+  .dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--border);
     transition: background 0.3s;
   }
-  .ct-dot.active { background: var(--accent); }
-  .ct-dot.danger { background: var(--danger); }
+  .dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .dot.danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
 
-  .ct-label {
+  .label {
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--muted);
   }
 
-  .ct-display-wrap {
+  /* Big Display */
+  .display-wrap {
     position: relative;
-    width: 230px;
-    height: 230px;
+    width: 260px;
+    height: 260px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
 
-  .ct-ring-svg {
+  .ring-svg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -84,227 +115,281 @@
     pointer-events: none;
   }
 
-  .ct-ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
-  .ct-ring-progress {
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .ring-progress {
     fill: none;
     stroke: var(--accent);
     stroke-width: 4;
     stroke-linecap: round;
-    transition: stroke-dashoffset 0.95s linear, stroke 0.3s;
+    transition: stroke-dashoffset 0.9s linear, stroke 0.3s;
   }
 
-  .ct-inner {
+  .display-inner {
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
   }
 
-  .ct-number {
-    font-family: 'DM Mono', var(--font-mono), monospace;
-    font-size: 68px;
+  .time-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 76px;
     font-weight: 500;
     letter-spacing: -3px;
     line-height: 1;
     color: var(--text);
     transition: color 0.3s;
   }
-  .ct-number.danger { color: var(--danger); }
 
-  .ct-unit {
+  .time-number.danger { color: var(--danger); }
+
+  .time-unit {
+    font-family: 'DM Sans', sans-serif;
     font-size: 11px;
     font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
     color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
-  .ct-input-row {
+  /* Set input row */
+  .input-row {
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
-    background: var(--color-background-secondary, rgba(0,0,0,0.03));
-    border: 0.5px solid var(--border);
-    border-radius: var(--border-radius-md, 8px);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     padding: 10px 14px;
   }
-  .ct-input-row label { font-size: 13px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
-  .ct-input-row input {
+
+  .input-row label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .input-row input {
     flex: 1;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text);
-    font-family: 'DM Mono', var(--font-mono), monospace;
+    font-family: 'DM Mono', monospace;
     font-size: 16px;
     font-weight: 500;
     text-align: right;
     min-width: 0;
   }
-  .ct-input-row input::-webkit-inner-spin-button,
-  .ct-input-row input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-  .ct-set-btn {
+  .input-row input::-webkit-inner-spin-button,
+  .input-row input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .set-btn {
     background: var(--accent);
     color: #fff;
     border: none;
-    border-radius: var(--border-radius-md, 8px);
+    border-radius: 8px;
     padding: 6px 16px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, transform 0.1s;
   }
-  .ct-set-btn:hover { opacity: 0.85; }
 
-  .ct-presets { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; }
-  .ct-chip {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 13px;
-    border-radius: 100px;
-    background: var(--color-background-secondary, rgba(0,0,0,0.04));
-    border: 0.5px solid var(--border);
-    color: var(--muted);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  .set-btn:hover { opacity: 0.85; }
+  .set-btn:active { transform: scale(0.97); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
   }
-  .ct-chip:hover { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
 
-  .ct-controls { display: flex; gap: 10px; width: 100%; }
-  .ct-btn {
+  .btn {
     flex: 1;
-    padding: 13px;
+    padding: 14px;
     border: none;
-    border-radius: var(--border-radius-md, 8px);
+    border-radius: 12px;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
-    transition: opacity 0.2s, transform 0.1s;
   }
-  .ct-btn:active { transform: scale(0.97); }
-  .ct-btn-start { background: var(--accent); color: #fff; }
-  .ct-btn-start:hover { opacity: 0.9; }
-  .ct-btn-reset {
-    background: var(--color-background-secondary, rgba(0,0,0,0.04));
-    color: var(--muted);
-    border: 0.5px solid var(--border);
-  }
-  .ct-btn-reset:hover { color: var(--text); }
 
-  .ct-status {
+  .btn:active { transform: scale(0.97); }
+
+  .btn-start {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(124,106,247,0.3);
+  }
+  .btn-start:hover { opacity: 0.9; box-shadow: 0 4px 24px rgba(124,106,247,0.45); }
+
+  .btn-reset {
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-reset:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+  /* Status message */
+  .status {
     font-size: 12px;
     color: var(--muted);
     height: 16px;
     text-align: center;
     transition: color 0.3s;
   }
-  .ct-status.ok { color: var(--green); }
-  .ct-status.err { color: var(--danger); }
+  .status.ok { color: var(--green); }
+  .status.err { color: var(--danger); }
+
+  /* Preset chips */
+  .presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .chip {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 14px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--text);
+  }
 </style>
+</head>
 
-<div class="ct-root">
-  <div class="ct-card" id="ctCard">
+<body>
 
-    <div class="ct-header">
-      <div class="ct-dot-row">
-        <div class="ct-dot" id="d1"></div>
-        <div class="ct-dot" id="d2"></div>
-        <div class="ct-dot" id="d3"></div>
-        <div class="ct-dot" id="d4"></div>
-        <div class="ct-dot" id="d5"></div>
-      </div>
-      <span class="ct-label">Countdown Timer</span>
+<div class="card" id="timerCard">
+
+  <div class="header">
+    <div class="dot-row">
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
+      <div class="dot" id="d5"></div>
     </div>
-
-    <div class="ct-display-wrap">
-      <svg class="ct-ring-svg" viewBox="0 0 230 230" xmlns="http://www.w3.org/2000/svg">
-        <circle class="ct-ring-bg" cx="115" cy="115" r="104"/>
-        <circle class="ct-ring-progress" id="ctRing" cx="115" cy="115" r="104"/>
-      </svg>
-      <div class="ct-inner">
-        <div class="ct-number" id="ctDisplay">30</div>
-        <div class="ct-unit" id="ctUnit">seconds</div>
-      </div>
-    </div>
-
-    <div class="ct-input-row">
-      <label for="ctInput">Set time</label>
-      <input id="ctInput" type="number" min="1" max="36000" value="30" placeholder="sec">
-      <button class="ct-set-btn" id="ctSetBtn">Set</button>
-    </div>
-
-    <div class="ct-presets">
-      <div class="ct-chip" data-preset="30">30s</div>
-      <div class="ct-chip" data-preset="60">1m</div>
-      <div class="ct-chip" data-preset="300">5m</div>
-      <div class="ct-chip" data-preset="600">10m</div>
-      <div class="ct-chip" data-preset="1800">30m</div>
-    </div>
-
-    <div class="ct-controls">
-      <button class="ct-btn ct-btn-start" id="ctStartBtn">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><path d="M3 2l8 4.5L3 11V2z"/></svg>
-        Start
-      </button>
-      <button class="ct-btn ct-btn-reset" id="ctResetBtn">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M11.5 7A4.5 4.5 0 1 1 7 2.5h3M10 1v3H7"/></svg>
-        Reset
-      </button>
-    </div>
-
-    <div class="ct-status" id="ctMsg"></div>
+    <span class="label">Countdown Timer</span>
   </div>
+
+  <!-- Ring + number display -->
+  <div class="display-wrap">
+    <svg class="ring-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+      <circle class="ring-bg" cx="130" cy="130" r="118"/>
+      <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="118"/>
+    </svg>
+    <div class="display-inner">
+      <div class="time-number" id="display">30</div>
+      <div class="time-unit" id="unitLabel">seconds</div>
+    </div>
+  </div>
+
+  <!-- Input row -->
+  <div class="input-row">
+    <label for="timeInput">Set time</label>
+    <input id="timeInput" type="number" min="1" max="36000" value="30" placeholder="sec">
+    <button class="set-btn" onclick="applyTimerSetting()">Set</button>
+  </div>
+
+  <!-- Presets -->
+  <div class="presets">
+    <div class="chip" onclick="setPreset(30)">30s</div>
+    <div class="chip" onclick="setPreset(60)">1m</div>
+    <div class="chip" onclick="setPreset(300)">5m</div>
+    <div class="chip" onclick="setPreset(600)">10m</div>
+    <div class="chip" onclick="setPreset(1800)">30m</div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="controls">
+    <button class="btn btn-start" id="startBtn" onclick="startCountdown()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2l9 5-9 5V2z"/></svg>
+      Start
+    </button>
+    <button class="btn btn-reset" onclick="resetCountdown()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11.5 7A4.5 4.5 0 1 1 7 2.5h3M10 1v3H7"/></svg>
+      Reset
+    </button>
+  </div>
+
+  <div class="status" id="msg"></div>
+
 </div>
 
 <script>
-(function() {
-  const CIRC = 2 * Math.PI * 104;
-  let total = 30, remaining = 30, interval = null;
+  /* ── State ── */
+  let totalSeconds = 30;
+  let remaining = 30;
+  let timerInterval = null;
 
-  const card = document.getElementById('ctCard');
-  const display = document.getElementById('ctDisplay');
-  const unit = document.getElementById('ctUnit');
-  const ring = document.getElementById('ctRing');
-  const input = document.getElementById('ctInput');
-  const startBtn = document.getElementById('ctStartBtn');
-  const resetBtn = document.getElementById('ctResetBtn');
-  const setBtn = document.getElementById('ctSetBtn');
-  const msg = document.getElementById('ctMsg');
-  const dots = document.querySelectorAll('.ct-dot');
+  const display   = document.getElementById("display");
+  const unitLabel = document.getElementById("unitLabel");
+  const card      = document.getElementById("timerCard");
+  const msg       = document.getElementById("msg");
+  const timeInput = document.getElementById("timeInput");
+  const startBtn  = document.getElementById("startBtn");
+  const ring      = document.getElementById("ringProgress");
 
-  ring.style.strokeDasharray = CIRC;
+  const CIRCUMFERENCE = 2 * Math.PI * 118;
+  ring.style.strokeDasharray = CIRCUMFERENCE;
 
-  function fmt(s) {
-    if (s >= 3600) {
-      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-      return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    }
-    if (s >= 60) {
-      return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-    }
-    return String(s);
+  /* ── Sounds ── */
+  const beep20  = new Audio("sounds/Beep1.mp3");
+  const beep5   = new Audio("sounds/buzzer.mp3");
+  const zeroSfx = new Audio("sounds/GameOver.mp3");
+  [beep20, beep5, zeroSfx].forEach(a => { a.preload = "auto"; });
+  beep20.volume = 0.9; beep5.volume = 1.0; zeroSfx.volume = 1.0;
+
+  function safePlay(aud) {
+    try { aud.pause(); aud.currentTime = 0; const p = aud.play(); if (p?.catch) p.catch(()=>{}); } catch(e) {}
+  }
+  function stopAll() {
+    [beep20, beep5, zeroSfx].forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
   }
 
-  function unitLabel(s) {
-    if (s >= 3600) return 'hr : min : sec';
-    if (s >= 60) return 'min : sec';
-    return s === 1 ? 'second' : 'seconds';
+  /* ── Ring progress ── */
+  function updateRing() {
+    const pct = totalSeconds > 0 ? remaining / totalSeconds : 0;
+    const offset = CIRCUMFERENCE * (1 - pct);
+    ring.style.strokeDashoffset = offset;
+    const isDanger = remaining <= 5 && remaining > 0;
+    ring.style.stroke = isDanger ? "var(--danger)" : "var(--accent)";
   }
 
+  /* ── Dots indicator ── */
   function updateDots() {
-    const pct = total > 0 ? remaining / total : 0;
+    const dots = document.querySelectorAll('.dot');
+    const pct = totalSeconds > 0 ? remaining / totalSeconds : 0;
     const active = Math.ceil(pct * dots.length);
     const isDanger = remaining <= 5 && remaining > 0;
     dots.forEach((d, i) => {
@@ -313,82 +398,120 @@
     });
   }
 
-  function refresh() {
-    display.textContent = fmt(remaining);
-    unit.textContent = unitLabel(remaining);
-    const isDanger = remaining <= 5 && remaining > 0;
-    display.classList.toggle('danger', isDanger);
-    ring.style.stroke = isDanger ? 'var(--danger)' : 'var(--accent)';
-    const pct = total > 0 ? remaining / total : 0;
-    ring.style.strokeDashoffset = CIRC * (1 - pct);
+  /* ── Display ── */
+  function formatTime(s) {
+    if (s >= 3600) {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+    if (s >= 60) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+    return String(s);
+  }
+
+  function getUnit(s) {
+    if (s >= 3600) return 'hr : min : sec';
+    if (s >= 60) return 'min : sec';
+    return s === 1 ? 'second' : 'seconds';
+  }
+
+  function refreshDisplay() {
+    display.textContent = formatTime(remaining);
+    unitLabel.textContent = getUnit(remaining);
+    display.classList.toggle('danger', remaining <= 5 && remaining > 0);
+    updateRing();
     updateDots();
   }
 
-  function setMsg(text, type) {
+  function setMessage(text, type='') {
     msg.textContent = text || '';
-    msg.className = 'ct-status' + (type ? ' ' + type : '');
+    msg.className = 'status' + (type ? ' ' + type : '');
   }
 
-  function applySet(silent) {
-    if (interval) { setMsg('Stop or reset before changing time.', 'err'); return; }
-    const v = parseInt(input.value, 10);
-    if (!Number.isFinite(v) || v < 1) { setMsg('Enter a valid number ≥ 1.', 'err'); return; }
-    total = v; remaining = v;
-    refresh();
-    if (!silent) setMsg('Timer set to ' + (v < 60 ? v + 's' : Math.floor(v/60) + 'm' + (v%60?' '+v%60+'s':'')), 'ok');
+  /* ── Preset ── */
+  function setPreset(s) {
+    if (timerInterval) { setMessage("Reset timer before changing time.", "err"); return; }
+    timeInput.value = s;
+    applyTimerSetting(true);
   }
 
-  function setRunningState(running) {
-    if (running) {
-      startBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><rect x="2" y="2" width="3" height="8" rx="1"/><rect x="7" y="2" width="3" height="8" rx="1"/></svg> Running';
-      startBtn.style.opacity = '0.6';
-      startBtn.style.cursor = 'default';
-    } else {
-      startBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><path d="M3 2l8 4.5L3 11V2z"/></svg> Start';
-      startBtn.style.opacity = '';
-      startBtn.style.cursor = '';
-    }
+  /* ── Apply setting ── */
+  function applyTimerSetting(silent=false) {
+    if (timerInterval) { setMessage("Stop or Reset before changing time.", "err"); return; }
+    const val = parseInt(timeInput.value, 10);
+    if (!Number.isFinite(val) || val < 1) { setMessage("Enter a valid number ≥ 1.", "err"); return; }
+    totalSeconds = val;
+    remaining = val;
+    refreshDisplay();
+    if (!silent) setMessage(`Set to ${val < 60 ? val + 's' : Math.floor(val/60) + 'm' + (val%60 ? ' '+val%60+'s':'')}`, "ok");
   }
 
-  startBtn.addEventListener('click', () => {
-    if (interval) return;
-    if (remaining <= 0) remaining = total;
-    setMsg('');
-    setRunningState(true);
-    interval = setInterval(() => {
+  timeInput.addEventListener("keydown", e => { if (e.key === "Enter") applyTimerSetting(); });
+
+  /* ── Start ── */
+  function startCountdown() {
+    if (timerInterval) return;
+    if (remaining <= 0) remaining = totalSeconds;
+    setMessage("");
+    try { beep20.load(); beep5.load(); zeroSfx.load(); } catch(e){}
+
+    startBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8" rx="1"/><rect x="7" y="2" width="3" height="8" rx="1"/></svg> Running`;
+    startBtn.style.opacity = '0.65';
+    startBtn.style.cursor = 'default';
+
+    timerInterval = setInterval(() => {
       remaining--;
-      refresh();
-      card.classList.toggle('flash', remaining <= 5 && remaining > 0);
+      refreshDisplay();
+
+      if (remaining <= 5 && remaining > 0) {
+        card.classList.add("flash");
+        safePlay(beep5);
+      } else if (remaining <= 20 && remaining > 5) {
+        card.classList.remove("flash");
+        safePlay(beep20);
+      } else {
+        card.classList.remove("flash");
+      }
+
       if (remaining === 0) {
-        clearInterval(interval); interval = null;
-        card.classList.remove('flash');
-        setMsg("Time's up!", 'err');
-        setRunningState(false);
+        clearInterval(timerInterval);
+        timerInterval = null;
+        card.classList.remove("flash");
+        stopAll();
+        safePlay(zeroSfx);
+        setMessage("Time's up!", "err");
+        resetStartBtn();
         updateDots();
       }
     }, 1000);
-  });
+  }
 
-  resetBtn.addEventListener('click', () => {
-    clearInterval(interval); interval = null;
-    card.classList.remove('flash');
-    remaining = total;
-    refresh(); setMsg('');
-    setRunningState(false);
-  });
+  /* ── Reset ── */
+  function resetCountdown() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    stopAll();
+    card.classList.remove("flash");
+    remaining = totalSeconds;
+    refreshDisplay();
+    setMessage("");
+    resetStartBtn();
+  }
 
-  setBtn.addEventListener('click', () => applySet(false));
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') applySet(false); });
+  function resetStartBtn() {
+    startBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2l9 5-9 5V2z"/></svg> Start`;
+    startBtn.style.opacity = '';
+    startBtn.style.cursor = '';
+  }
 
-  document.querySelectorAll('.ct-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      if (interval) { setMsg('Reset before changing time.', 'err'); return; }
-      input.value = chip.dataset.preset;
-      applySet(true);
-    });
-  });
-
-  input.value = total;
-  refresh();
-})();
+  /* ── Init ── */
+  timeInput.value = totalSeconds;
+  refreshDisplay();
 </script>
+</body>
+</html>
